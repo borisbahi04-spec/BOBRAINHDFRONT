@@ -1,0 +1,104 @@
+import {
+  Card, CardContent, Typography, Table, TableHead, TableRow,
+  TableCell, TableBody, TablePagination, Select, MenuItem, Box
+} from "@mui/material";
+import moment from "moment";
+import { useState } from "react";
+import { InfoCard } from "./info-card";
+
+export function SectionTableWithColumns({ icon, title, rows = [], statusColor = 'default' }) {
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [filterLevel, setFilterLevel] = useState('ALL');
+
+  const handleChangePage = (_, newPage) => setPage(newPage);
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+  const handleLevelFilter = (event) => {
+    setFilterLevel(event.target.value);
+    setPage(0);
+  };
+
+  const filteredRows = filterLevel === 'ALL'
+    ? rows
+    : rows.filter(row => row.level === filterLevel);
+
+  const paginatedRows = filteredRows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+
+  return (
+    <Card sx={{ borderTop: `6px solid ${statusColor}`, minHeight: 180 }}>
+      <CardContent>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+          <Typography variant="h6">{icon} {title}</Typography>
+          <Select
+            size="small"
+            value={filterLevel}
+            onChange={handleLevelFilter}>
+            <MenuItem value="ALL">Tous les niveaux</MenuItem>
+            <MenuItem value="CRITIQUE">Critique</MenuItem>
+            <MenuItem value="WARNING">Warning</MenuItem>
+            <MenuItem value="INFO">Info</MenuItem>
+          </Select>
+        </Box>
+
+        <Table size="small" height={500}>
+          <TableHead>
+            <TableRow>
+              <TableCell><strong>Date</strong></TableCell>
+              <TableCell><strong>Type</strong></TableCell>
+              <TableCell><strong>Succursale</strong></TableCell>
+              <TableCell><strong>Niveau</strong></TableCell>
+              <TableCell><strong>Message</strong></TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {paginatedRows.map((row, index) => {
+              const { message } = row;
+
+                return (
+                <TableRow key={index}>
+                  <TableCell >{moment(row?.createdAt).format('DD/MM/YYYY HH:mm')}</TableCell>
+                  <TableCell>{row?.type ?? ''}</TableCell>
+                  <TableCell>{row?.destinationBranch?.displayName ?? ''}</TableCell>
+                  <TableCell>{row.level}</TableCell>
+                  <TableCell>
+                    <InfoCard
+                      title=""
+                      metrics={[
+                        message?.branch ? `Succursale : ${message?.branch}` : '',
+                        message?.lotnumber ? `Lot : ${message?.lotnumber}` : '',
+                        message?.stacknumber ? `Stack : ${message?.stacknumber}` : '',
+                        message?.shift ? `Shift : ${message?.shift}` : '',
+                        message?.machineline ? `Ligne : ${message?.machineline ?? '-'} | Machine : ${message?.machine ?? '-'}` : '',
+                        message?.kwhs ? `kwhs : ${message?.kwhs} | kpcs : ${message?.kpcs}` : '',
+                        message?.unscpcs ? `unscpcs : ${message?.unscpcs} | unscwhs : ${message?.unscwhs}` : '',
+                        message?.shelled ? `shelled : ${message?.shelled} | uncut : ${message?.uncut}` : '',
+                        message?.backcut ? `backcut : ${message?.backcut} | tipcup : ${message?.tipcup}` : '',
+                        message?.moisturercn ? `moisture : ${message?.moisturercn}` : '-',
+                        message?.x ? ` ${message?.x}` : '-',
+
+                      ]}
+                      statusColor="green"
+                    />
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+
+        <TablePagination
+          component="div"
+          count={filteredRows.length}
+          page={page}
+          onPageChange={handleChangePage}
+          rowsPerPage={rowsPerPage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+          rowsPerPageOptions={[5, 10, 25]}
+        />
+      </CardContent>
+    </Card>
+  );
+}

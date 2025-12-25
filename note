@@ -1,0 +1,26 @@
+yarn add canvas --force
+
+npm rebuild canvas
+
+git fetch origin
+git reset --hard origin/main
+
+git push origin feature/module-factory
+
+must
+
+import { io, Socket } from 'socket.io-client';
+
+let socket: Socket | null = null;
+
+export const initSocket = (token:string) => {
+  if (!socket) {
+    socket = io('http://flash.dekeloil.local:3336/ws', {
+      auth: { token },
+      transports: ['websocket'], // force WebSocket pur
+    });
+
+  }
+
+return socket;
+};

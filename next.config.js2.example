@@ -1,0 +1,70 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
+const path = require('path')
+
+/** @type {import('next').NextConfig} */
+
+// Remove this if you're not using Fullcalendar features
+const withTM = require('next-transpile-modules')([
+  '@fullcalendar/common',
+  '@fullcalendar/react',
+  '@fullcalendar/daygrid',
+  '@fullcalendar/list',
+  '@fullcalendar/timegrid'
+])
+
+module.exports = withTM({
+  trailingSlash: false,
+  reactStrictMode: false,
+  experimental: {
+    esmExternals: false
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
+},
+typescript: {
+  ignoreBuildErrors: true,
+},
+  webpack: config => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      apexcharts: path.resolve(__dirname, './node_modules/apexcharts-clevision')
+    }
+
+    return config
+  },
+  async rewrites() {
+
+return [
+      {
+        basePath: false,
+        source: '/bobrain-backend/api/v1/:path*',
+        destination: 'http://stock.capro.local:3335/bobrain-backend/api/v1/:path*',
+      }
+
+    ];
+  },
+  async headers() {
+    return [
+      {
+        source: '/api/v1/:path*',
+        headers: [
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*', // Change this to allow specific origins
+          },
+          {
+            key: 'Access-Control-Allow-Methods',
+            value: 'GET, POST, PUT, DELETE, OPTIONS',
+          },
+          {
+            key: 'Access-Control-Allow-Headers',
+            value: 'Content-Type, Authorization',
+          },
+        ],
+      },
+    ];
+  },
+
+
+})
+
