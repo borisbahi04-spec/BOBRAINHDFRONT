@@ -1,40 +1,51 @@
+// ** React Imports
 import { ReactNode, ReactElement, useEffect } from 'react'
+
+// ** Next Imports
 import { useRouter } from 'next/router'
-import { useSession } from 'next-auth/react'
+
+// ** Hooks Import
+import { useAuth } from 'src/hooks/useAuth'
+import { getSession, useSession } from 'next-auth/react'
 
 interface AuthGuardProps {
   children: ReactNode
   fallback: ReactElement | null
 }
 
-const AuthGuard = ({ children, fallback }: AuthGuardProps) => {
+const AuthGuard = (props: AuthGuardProps) => {
+  const { children, fallback } = props
   const router = useRouter()
-  const { status } = useSession()
+  const { data: session } = useSession();
 
-  useEffect(() => {
-    if (!router.isReady) return
+  useEffect(
+    () => {
+      if (!router.isReady) {
+        return
+      }
 
-    // 🚫 PAS de redirection pendant le loading
-    if (status === 'unauthenticated') {
-      router.replace({
-        pathname: '/login',
-        query: { returnUrl: router.asPath }
-      })
-    }
-  }, [status, router.isReady, router])
 
-  // ⏳ Pendant le loading → fallback
-  if (status === 'loading') {
+      //check expired session
+
+      if (!session || session === null) {
+        if (router.asPath !== '/') {
+          router.replace({pathname: '/login',query: { returnUrl: router.asPath }})
+        } else {
+          router.replace('/login')
+        }
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [router.route]
+  )
+
+  if (session === null) {
+    //router.replace('/login')
     return fallback
   }
 
-  // ❌ Non authentifié → fallback (le redirect est déjà lancé)
-  if (status === 'unauthenticated') {
-    return fallback
-  }
-
-  // ✅ Authentifié
   return <>{children}</>
 }
+
 
 export default AuthGuard
