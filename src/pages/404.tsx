@@ -52,7 +52,7 @@ const TreeIllustration = styled('img')(({ theme }) => ({
 const Error404 = () => {
   const router = useRouter()
   const handleRedirectTohome = (url?: string) => {
-    router.push('/home')
+    router.push('/')
 }
 
   return (
