@@ -26,7 +26,7 @@ const STATUS_MAP: Record<
   },
   DISPLAY_OFF: {
     label: 'Afficheur éteint',
-    color: 'warning',
+    color: 'error',
     icon: 'mdi:monitor-off'
   },
   SERVICE_SHUTDOWN: {
@@ -37,6 +37,11 @@ const STATUS_MAP: Record<
   WEIGHT_OK: {
     label: 'Poids valide',
     color: 'success',
+    icon: 'mdi:scale'
+  },
+  WEIGHT_NOT_OK: {
+    label: 'Poids non valide',
+    color: 'warning',
     icon: 'mdi:scale'
   }
 }

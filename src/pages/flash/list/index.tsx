@@ -72,7 +72,9 @@ const MyColumns = ({ authuser }): GridColDef[] => {
       flex: 0.25,
       field: 'status',
       headerName: 'Statut',
-      renderCell: ({ value }) => <StatusFlashChip value={value} />,
+      renderCell: ({ value }) => {
+        return <StatusFlashChip value={value} />
+      }
     },
   ];
 
