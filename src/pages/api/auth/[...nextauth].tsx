@@ -68,9 +68,14 @@ return null; // ✅ TOUJOURS
       // Send properties to the client, like an access_token from a provider.
       session.user=token;
 
-
 return session;
     },
+
+  async redirect({ url, baseUrl }) {
+    // force l'utilisation de baseUrl (NEXTAUTH_URL)
+    return baseUrl;
+  },
+
   },
 
   pages: {
