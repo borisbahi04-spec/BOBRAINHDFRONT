@@ -55,12 +55,12 @@ return null;
 
 return session;
     },
-   /* async redirect({ url, baseUrl }) {
+    async redirect({ url, baseUrl }) {
       // Force la redirection vers la production
       console.log('dsdsdssdsdsdd',baseUrl,process.env.NEXTAUTH_URL,url)
 
 return `${baseUrl}`;
-    }*/
+    }
   },
 
   pages: {

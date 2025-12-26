@@ -3,7 +3,7 @@ export function getBackendUrl(path = ''): string {
   const port = process.env.NEXT_PUBLIC_BACKEND_PORT
   const uri = process.env.NEXT_PUBLIC_BACKEND_URI
 
-  if (!address || !uri) {
+  if (!address || !uri || !port) {
     throw new Error('Backend env variables missing')
   }
 
