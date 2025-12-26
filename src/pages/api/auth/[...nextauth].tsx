@@ -53,6 +53,7 @@ export const authOptions = {
     },
     async redirect({ url, baseUrl }) {
       // Force la redirection vers la production
+      console.log('dsdsdssdsdsdd',baseUrl,process.env.NEXTAUTH_URL,url)
       return `${process.env.NEXTAUTH_URL}`;
     }
   },
