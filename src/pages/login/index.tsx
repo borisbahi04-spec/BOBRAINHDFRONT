@@ -104,7 +104,7 @@ const LoginPage = () => {
       username: username,
       password: password,
       redirect: false,
-      //callbackUrl: `${window.location.origin}/home`,
+      callbackUrl: `/`,
     })
 
 
