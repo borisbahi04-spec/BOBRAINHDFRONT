@@ -41,6 +41,17 @@ return null;
       }
     })
   ],
+  cookies: {
+  sessionToken: {
+    name: 'next-auth.session-token',
+    options: {
+      httpOnly: true,
+      sameSite: 'lax',
+      path: '/',
+      secure: false, // 🔥 CRITIQUE EN HTTP
+    },
+  },
+},
 
   session: {
     strategy: "jwt",
