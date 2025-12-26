@@ -57,21 +57,19 @@ return null;
     strategy: "jwt",
   },
 
-  callbacks: {
-    async jwt({ token, user }) {
+   callbacks: {
+
+    async jwt({token, user, account}) {
       return { ...token, ...user };
     },
-    async session({ session, token }) {
-      session.user = token;
+
+    async session({ session, token, user }) {
+      // Send properties to the client, like an access_token from a provider.
+      session.user=token;
+
 
 return session;
     },
-    async redirect({ url, baseUrl }) {
-      // Force la redirection vers la production
-      console.log('dsdsdssdsdsdd',baseUrl,process.env.NEXTAUTH_URL,url)
-
-return `${baseUrl}`;
-    }
   },
 
   pages: {
