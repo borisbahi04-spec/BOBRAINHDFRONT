@@ -15,6 +15,7 @@ export const authOptions = {
       },
       async authorize(credentials) {
         try {
+          console.log('test555',getBackendUrl)
           const { username, password } = credentials as any;
           const res = await fetch(`${getBackendUrl()}/auth/login`, {
             method: "POST",
@@ -28,7 +29,8 @@ export const authOptions = {
           return user; // SUCCESS
         } catch (error) {
           console.error("AUTHORIZE ERROR:", error);
-          return null;
+
+return null;
         }
       }
     })
