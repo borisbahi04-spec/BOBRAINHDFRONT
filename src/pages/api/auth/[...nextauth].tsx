@@ -17,7 +17,8 @@ export const authOptions = {
         try {
           console.log('test555',getBackendUrl)
           const { username, password } = credentials as any;
-          const res = await fetch(`${getBackendUrl()}/auth/login`, {
+          const url = getBackendUrl('auth/login', true);
+          const res = await fetch(url, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ username, password }),
