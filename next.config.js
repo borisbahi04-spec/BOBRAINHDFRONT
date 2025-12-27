@@ -3,6 +3,7 @@ const path = require('path')
 
 // Variables d'env REST API
 const backendUri = process.env.NEXT_PUBLIC_BACKEND_URI || 'flash-backend/api/v1'
+const backendPort = process.env.NEXT_PUBLIC_BACKEND_PORT || 3336
 
 /** @type {import('next').NextConfig} */
 
@@ -42,7 +43,7 @@ module.exports = withTM({
     return [
       {
         source: `/${backendUri}/:path*`,
-        destination: `http://127.0.0.1:3336/${backendUri}/:path*`, // localhost du backend
+        destination: `http://127.0.0.1:${backendPort}/${backendUri}/:path*`, // localhost du backend
       },
       // Pas de rewrite pour WebSocket (Socket.IO gère namespace /ws)
     ]
@@ -70,7 +71,7 @@ module.exports = withTM({
   devServer: {
     proxy: {
       '/ws': {
-        target: 'http://127.0.0.1:3336',
+        target: `http://127.0.0.1:${backendPort}`,
         ws: true,
         changeOrigin: true,
       },
