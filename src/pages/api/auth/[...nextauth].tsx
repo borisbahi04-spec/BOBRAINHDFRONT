@@ -5,6 +5,7 @@ import { getBackendUrl } from "src/utils/backendUrl";
 export const authOptions = {
   // Configure one or more authentication providers
   secret: process.env.NEXTAUTH_SECRET,
+  trustHost: true,
 
   providers: [
     CredentialsProvider({

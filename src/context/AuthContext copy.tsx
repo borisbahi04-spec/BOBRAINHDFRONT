@@ -1,6 +1,6 @@
 // ** React Imports
-import { createContext, useEffect, useState, ReactNode } from 'react'
-import { getCsrfToken, signIn, useSession } from "next-auth/react"
+import { createContext, useState, ReactNode } from 'react'
+import { signIn } from "next-auth/react"
 // ** Next Import
 import { useRouter } from 'next/router'
 
