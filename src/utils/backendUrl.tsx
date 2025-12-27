@@ -1,9 +1,11 @@
 export function getBackendUrl(path = ''): string {
-  // En prod, on utilise une URL relative pour que Next.js + Nginx gère le proxy
-  const uri = process.env.NEXT_PUBLIC_BACKEND_URI
-  if (!uri) throw new Error('NEXT_PUBLIC_BACKEND_URI missing')
+  const address = process.env.NEXT_PUBLIC_BACKEND_HOST || 'http://127.0.0.1';
+  const port = process.env.NEXT_PUBLIC_BACKEND_PORT || '3336';
+  const uri = process.env.NEXT_PUBLIC_BACKEND_URI || 'flash-backend/api/v1';
 
-  return path ? `/${uri}/${path}` : `/${uri}`
+  const base = `${address}:${port}/${uri}`;
+
+  return path ? `${base}/${path}` : base;
 }
 
 export function getBackendPublicUri(): string {
