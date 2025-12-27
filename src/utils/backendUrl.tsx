@@ -1,20 +1,19 @@
-// src/utils/backendUrl.ts
-export function getBackendUrl(path = '', isServerSide = false): string {
-  const uri = process.env.NEXT_PUBLIC_BACKEND_URI;
-  if (!uri) throw new Error('NEXT_PUBLIC_BACKEND_URI missing');
+export function getBackendUrl(path = ''): string {
+  const address = process.env.NEXT_PUBLIC_BACKEND_HOST
+  const port = process.env.NEXT_PUBLIC_BACKEND_PORT
+  const uri = process.env.NEXT_PUBLIC_BACKEND_URI
 
-  if (isServerSide) {
-    // Node.js côté serveur (NextAuth authorize)
-    const host = process.env.NEXT_PUBLIC_BACKEND_HOST || 'http://127.0.0.1';
-    const port = process.env.NEXT_PUBLIC_BACKEND_PORT || '3336';
-    const base = `${host}:${port}/${uri}`;
-
-return path ? `${base}/${path}` : base;
-  } else {
-    // Frontend → URL relative pour Nginx
-    return path ? `/${uri}/${path}` : `/${uri}`;
+  if (!address || !uri || !port) {
+    throw new Error('Backend env variables missing')
   }
+
+  const base = port
+    ? `${address}:${port}/${uri}`
+    : `${address}/${uri}`
+
+  return path ? `${base}/${path}` : base
 }
+
 
 export function getBackendPublicUri(): string {
   const uri = process.env.NEXT_PUBLIC_BACKEND_URI
