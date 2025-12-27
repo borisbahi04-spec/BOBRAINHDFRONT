@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 const path = require('path')
 
+const backendUri = process.env.NEXT_PUBLIC_BACKEND_URI
+const backendHost = process.env.NEXT_PUBLIC_BACKEND_HOST
+const backendPort = process.env.NEXT_PUBLIC_BACKEND_PORT
+const backendUri2 = process.env.NEXT_PUBLIC_BACKEND_URI2
+
+
 /** @type {import('next').NextConfig} */
 
 // Remove this if you're not using Fullcalendar features
@@ -16,7 +22,7 @@ module.exports = withTM({
   trailingSlash: false,
   reactStrictMode: false,
   experimental: {
-    esmExternals: false
+    esmExternals: true
   },
   eslint: {
     ignoreDuringBuilds: true,
@@ -32,21 +38,43 @@ typescript: {
 
     return config
   },
+
   async rewrites() {
 
-return [
-      {
-        basePath: false,
-        source: '/bobrain-backend/api/v1/:path*',
-        destination: 'http://stock.capro.local:3335/bobrain-backend/api/v1/:path*',
+    if (!backendHost || !backendPort || !backendUri) {
+        throw new Error("NEXT_PUBLIC_BACKEND_* variables not defined",backendUri,backendHost,backendPort)
       }
 
+return [
+
+      {
+        basePath: false,
+        source: `/${backendUri}/:path*`,
+        destination: `${backendHost}:${backendPort}/${backendUri}/:path*`,
+      },
+
+      {
+        // Redirection WebSocket
+        source: '/ws/:path*',
+        destination: `${backendHost}:${backendPort}/ws/:path*`,
+
+      },
+
     ];
+  },
+  devServer: {
+    proxy: {
+      '/ws': {
+        target: `${backendHost}:${backendPort}`,
+        ws: true, // <-- active WebSocket proxy
+        changeOrigin: true,
+      },
+    },
   },
   async headers() {
     return [
       {
-        source: '/api/v1/:path*',
+        source: `/${backendUri2}/:path*`,
         headers: [
           {
             key: 'Access-Control-Allow-Origin',

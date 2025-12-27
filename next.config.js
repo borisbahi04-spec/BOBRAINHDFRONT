@@ -1,11 +1,8 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 const path = require('path')
 
-const backendUri = process.env.NEXT_PUBLIC_BACKEND_URI
-const backendHost = process.env.NEXT_PUBLIC_BACKEND_HOST
-const backendPort = process.env.NEXT_PUBLIC_BACKEND_PORT
-const backendUri2 = process.env.NEXT_PUBLIC_BACKEND_URI2
-
+// Variables d'env REST API
+const backendUri = process.env.NEXT_PUBLIC_BACKEND_URI || 'flash-backend/api/v1'
 
 /** @type {import('next').NextConfig} */
 
@@ -26,73 +23,57 @@ module.exports = withTM({
   },
   eslint: {
     ignoreDuringBuilds: true,
-},
-typescript: {
-  ignoreBuildErrors: true,
-},
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   webpack: config => {
     config.resolve.alias = {
       ...config.resolve.alias,
       apexcharts: path.resolve(__dirname, './node_modules/apexcharts-clevision')
     }
-
     return config
   },
 
+  // -----------------------
+  // Rewrites REST API
+  // -----------------------
   async rewrites() {
-
-    if (!backendHost || !backendPort || !backendUri) {
-        throw new Error("NEXT_PUBLIC_BACKEND_* variables not defined",backendUri,backendHost,backendPort)
-      }
-
-return [
-
+    return [
       {
-        basePath: false,
         source: `/${backendUri}/:path*`,
-        destination: `${backendHost}:${backendPort}/${backendUri}/:path*`,
+        destination: `http://127.0.0.1:3336/${backendUri}/:path*`, // localhost du backend
       },
-
-      {
-        // Redirection WebSocket
-        source: '/ws/:path*',
-        destination: `${backendHost}:${backendPort}/ws/:path*`,
-
-      },
-
-    ];
+      // Pas de rewrite pour WebSocket (Socket.IO gère namespace /ws)
+    ]
   },
+
+  // -----------------------
+  // Headers (CORS)
+  // -----------------------
+  async headers() {
+    return [
+      {
+        source: `/${backendUri}/:path*`,
+        headers: [
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+          { key: 'Access-Control-Allow-Methods', value: 'GET, POST, PUT, DELETE, OPTIONS' },
+          { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization' },
+        ],
+      },
+    ]
+  },
+
+  // -----------------------
+  // DevServer Proxy (dev uniquement)
+  // -----------------------
   devServer: {
     proxy: {
       '/ws': {
-        target: `${backendHost}:${backendPort}`,
-        ws: true, // <-- active WebSocket proxy
+        target: 'http://127.0.0.1:3336',
+        ws: true,
         changeOrigin: true,
       },
     },
   },
-  async headers() {
-    return [
-      {
-        source: `/${backendUri2}/:path*`,
-        headers: [
-          {
-            key: 'Access-Control-Allow-Origin',
-            value: '*', // Change this to allow specific origins
-          },
-          {
-            key: 'Access-Control-Allow-Methods',
-            value: 'GET, POST, PUT, DELETE, OPTIONS',
-          },
-          {
-            key: 'Access-Control-Allow-Headers',
-            value: 'Content-Type, Authorization',
-          },
-        ],
-      },
-    ];
-  },
-
-
 })
-
