@@ -84,8 +84,7 @@ const AuthProvider = ({ children }: Props) => {
 
         router.replace(redirectURL as string)
       })*/
-       signIn()
-      .catch(err => {
+      signIn("credentials", { callbackUrl: "/flash/list" })      .catch(err => {
         if (errorCallback) errorCallback(err)
       })
   }
