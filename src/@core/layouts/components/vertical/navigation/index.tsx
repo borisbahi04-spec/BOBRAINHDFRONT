@@ -158,6 +158,7 @@ const Navigation = (props: Props) => {
           {userNavMenuContent ? (
             userNavMenuContent(props)
           ) : (
+            <>
             <List
               className='nav-items'
               sx={{
@@ -176,6 +177,7 @@ const Navigation = (props: Props) => {
                 {...props}
               />
             </List>
+            </>
           )}
           {afterNavMenuContent && afterVerticalNavMenuContentPosition === 'static' ? afterNavMenuContent(props) : null}
         </ScrollWrapper>

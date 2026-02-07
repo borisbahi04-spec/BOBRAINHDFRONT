@@ -92,18 +92,18 @@ const VerticalNavHeader = (props: Props) => {
   const MenuUnlockedIcon = () => userMenuUnlockedIcon || <Icon icon='mdi:radiobox-blank' />
 
   return (
+     <>
     <MenuHeaderWrapper className='nav-header' sx={{ pl: menuHeaderPaddingLeft() }}>
       {userNavMenuBranding ? (
         userNavMenuBranding(props)
       ) : (
-        <StyledLink href='/'>
-            <Box sx={{  display: 'flex', alignItems: 'left', marginLeft:-5}}>
-              <ImgStyled src='/images/monlogo.jpg' />
-            </Box>
+          <StyledLink href='/'>
+              <Box sx={{  display: 'flex', alignItems: 'left', marginLeft:-5}}>
+                <ImgStyled src='/images/monlogo.jpg' />
+              </Box>
 
-        </StyledLink>
+          </StyledLink>
       )}
-
       {hidden ? (
         <IconButton
           disableRipple
@@ -133,6 +133,10 @@ const VerticalNavHeader = (props: Props) => {
         </IconButton>
       )}
     </MenuHeaderWrapper>
+     <HeaderTitle variant='h5' sx={{ ml: 3, fontSize: '1.5rem !important', ...menuCollapsedStyles }}>
+        {themeConfig.templateName}
+     </HeaderTitle>
+    </>
   )
 }
 

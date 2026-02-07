@@ -156,11 +156,11 @@ i18next.init({
 
       <CacheProvider value={emotionCache}>
         <Head>
-          <title>{`BoBrain-Flash`}</title>
+          <title>{`BoBrain-Helpdesk`}</title>
           <meta
             name='description'
           />
-          <meta name='keywords' content='BoBrain-Flash' />
+          <meta name='keywords' content='BoBrain-Helpdesk' />
           <meta name='viewport' content='initial-scale=1, width=device-width' />
         </Head>
         {/*<AuthProvider>*/}

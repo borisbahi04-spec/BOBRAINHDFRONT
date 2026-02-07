@@ -43,7 +43,7 @@ return (
      <>
         <Divider/>
          <Box sx={{ p: 2, display:'flex', justifyContent: 'center', }}>
-           <Typography variant='h5'  sx={{ m: 1.5 }}>{authuser?.targetBranch && (`${authuser.targetBranch.displayName}`)}</Typography>
+           <Typography variant='h5'  sx={{ m: 1.5 }}>{authuser?.targetBranch && (`${authuser.username}`)}</Typography>
         </Box>
      </>
 
@@ -110,7 +110,7 @@ const UserLayout = ({children, contentHeightFixed }: Props) => {
         },
         appBar: {
           content: props => (
-            <VerticalAppBarContent
+             <VerticalAppBarContent
               hidden={hidden}
               settings={settings}
               saveSettings={saveSettings}
