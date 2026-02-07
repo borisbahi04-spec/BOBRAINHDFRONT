@@ -2,7 +2,7 @@
 const path = require('path')
 
 // Variables d'env REST API
-const backendUri = process.env.NEXT_PUBLIC_BACKEND_URI || 'flash-backend/api/v1'
+const backendUri = process.env.NEXT_PUBLIC_BACKEND_URI || 'helpdesk-backend/api/v1'
 
 /** @type {import('next').NextConfig} */
 
