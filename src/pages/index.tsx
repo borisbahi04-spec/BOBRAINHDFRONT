@@ -22,8 +22,7 @@ export const getHomeRoute = (role: string) => {
 }
 
 export const getDashboardRoute = () => {
-  //return '/home'
-  return `flash/list`
+  return '/home'
 }
 
 
@@ -38,9 +37,7 @@ return <Spinner />
 }
 
 
-export async function getServerSideProps(context: { req: any }) {
-  const { req } = context;
-  const session = await getSession({ req });
+export async function getServerSideProps() {
 
 return {
     props: {  },

@@ -7,7 +7,7 @@ import Typography from '@mui/material/Typography';
 import CloseIcon from '@mui/icons-material/Close';
 import Slide from '@mui/material/Slide';
 import { TransitionProps } from '@mui/material/transitions';
-import DashboardComponent from 'src/myCustomComponent/dashboardComponent';
+import DashboardComponent from 'src/myCustomComponent/dashboardComponent2';
 import { Box } from '@mui/material';
 import {useTranslate } from "react-translate"
 const Transition = React.forwardRef(function Transition(

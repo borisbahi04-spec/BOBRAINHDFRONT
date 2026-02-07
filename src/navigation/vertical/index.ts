@@ -1,42 +1,65 @@
 // ** Type import
 import { VerticalNavItemsType } from 'src/@core/layouts/types'
 import { EntityAbility, UserAction } from 'src/configs/Action'
+import { PAGE_SETTINGS } from 'src/definitions/constantes'
 
 const navigation = (): VerticalNavItemsType => {
   return [
-    /*{
+    {
       title: 'Acceuil',
-      path:'/home/list',
-      icon: 'mdi:home-outline',
-      action: UserAction.Read,
-      subject:EntityAbility.BRANCH,
-    },*/
-     {
-      title: 'Flash Info',
-      path:'/flash/list',
+      path:'/home',
       icon: 'mdi:home-outline',
       action: UserAction.Read,
       subject:EntityAbility.BRANCH,
     },
+
+     {
+      title:PAGE_SETTINGS.requester.title,
+      path:'/requester/list',
+      icon: PAGE_SETTINGS.requester.icon,
+      action: UserAction.Read,
+      subject:EntityAbility.REQUESTER,
+    },
     {
-      title: 'Utilisateur & Rôle',
-      icon: 'mdi:account-group',
+      title: PAGE_SETTINGS.user.title,
+      icon: PAGE_SETTINGS.user.icon,
       action: UserAction.Read,
       subject:EntityAbility.USER,
       children: [
         {
-          title: 'Liste Utilisateurs',
-          icon: 'mdi:account-group',
+          title: PAGE_SETTINGS.user.title,
+          icon: PAGE_SETTINGS.user.icon,
           path: '/user/list',
           action: UserAction.Read,
           subject:EntityAbility.USER,
         },
         {
-          title: 'Rôle',
+          title: PAGE_SETTINGS.roles.title,
           path: '/role/list',
-          icon: 'mdi-google-controller',
+          icon: PAGE_SETTINGS.roles.icon,
           action: UserAction.Read,
           subject:EntityAbility.ROLE,
+        },
+        {
+          title: PAGE_SETTINGS.departments.title,
+          path:'/department/list',
+          icon: PAGE_SETTINGS.departments.icon,
+          action: UserAction.Read,
+          subject:EntityAbility.DEPARTMENT,
+        },
+        {
+          title: PAGE_SETTINGS.stations.title,
+          path:'/station/list',
+          icon: PAGE_SETTINGS.stations.icon,
+          action: UserAction.Read,
+          subject:EntityAbility.STATION,
+        },
+        {
+          title: PAGE_SETTINGS.requestTypes.title,
+          path:'/requesttype/list',
+          icon: PAGE_SETTINGS.requestTypes.icon,
+          action: UserAction.Read,
+          subject:EntityAbility.BRANCH,
         },
       ]
     },

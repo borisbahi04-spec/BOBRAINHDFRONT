@@ -19,10 +19,8 @@ import { useDispatch } from 'react-redux'
 import { showErrors } from 'src/helpers'
 import { RST_RolesAction, RST_CreateRoleAction, RST_UpdateRoleAction, RST_DeleteRoleAction } from 'src/redux/actions/Roles/RoleActions'
 import { useRouter } from 'next/router'
-import {  makeStyles } from '@material-ui/core';
 import { AccessNameEnum, EntityAbility, UserAction } from 'src/configs/Action'
 import { CreateRoleDto } from 'src/dto/role/role.dto'
-import { RoleCreateDto } from 'src/dto/role/access-dto-view'
 import {
   Box,
   Button,
@@ -40,7 +38,9 @@ import {
   TableHead,
   TableRow,
   TextField,
-  Paper
+  Paper,
+  Typography,
+  FormControlLabel
 } from "@mui/material";
 import { AbilityContext } from 'src/layouts/components/acl/Can'
 
@@ -49,18 +49,21 @@ import { AbilityContext } from 'src/layouts/components/acl/Can'
 
 
 
-const AddCard = (props:RoleCreateDto) => {
+const AddCard = (props:any) => {
   const router = useRouter()
   const {data,access}=props;
   const defaultValues = {
     id: '',
     name: '',
     displayName: '',
-    permissions:''
+    permissions:'',
+    sendRequesterEmail: false,
+    isForOperator:false
   }
 
   const ability = useContext(AbilityContext)
 
+  console.log('accessData',access);
 
 
   // ** State
@@ -80,6 +83,8 @@ const AddCard = (props:RoleCreateDto) => {
     .required('Nom du rôle obilgatoire '),
     displayName: yup.string(),
     permissions: yup.object().nullable(),
+    sendRequesterEmail: yup.boolean().default(false),
+    isForOperator: yup.boolean().default(false)
   })
   const {
     reset,
@@ -159,21 +164,20 @@ const handleGetDefaultEntityList= (access:any) => {
 
 
 
-  const onSubmit = (dt:CreateRoleDto,e:any) =>{
-    e.preventDefault();
-
-return data? edit(dt):create(dt);
-}
+  const onSubmit = (dt: CreateRoleDto) => {
+  return data ? edit(dt) : create(dt);
+};
 
 
 
 useEffect(()=>{
   const initialPermissions = {};
-
   if (data) {
     setValue('id', data.id)
     setValue('name', data.name)
     setValue('displayName', data.displayName)
+    setValue('sendRequesterEmail',data.sendRequesterEmail)
+    setValue('isForOperator',data.isForOperator)
     setEntityPermissions(data?.permissions);
 
    }else{
@@ -252,155 +256,213 @@ useEffect(()=>{
 
   return (
     <>
-       <form onSubmit={handleSubmit(onSubmit)}>
-      <Card>
-        <CardContent>
-          <Grid container spacing={2}>
-            <Grid item xs={12}>
-              <FormControl fullWidth>
-                <Controller
-                  name="name"
-                  control={control}
-                  rules={{ required: true }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      autoFocus
-                      label="Nom*"
-                      variant="standard"
-                      inputProps={{
-                        style: {
-                          fontSize: 30,
-                          height: 60,
-                          width: 272,
-                          padding: "0 14px",
-                          fontWeight: "bold"
-                        }
-                      }}
-                      error={Boolean(errors.name)}
-                    />
-                  )}
-                />
-                {errors.name && <FormHelperText sx={{ color: "error.main" }}>{errors.name.message}</FormHelperText>}
-              </FormControl>
-            </Grid>
-
-            <Grid item xs={12}>
-              <FormControl fullWidth>
-                <Controller
-                  name="displayName"
-                  control={control}
-                  rules={{ required: true }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="Nom à afficher"
-                      variant="standard"
-                      multiline
-                      rows={2}
-                      error={Boolean(errors.displayName)}
-                    />
-                  )}
-                />
-                {errors.displayName && <FormHelperText sx={{ color: "error.main" }}>{errors.displayName.message}</FormHelperText>}
-              </FormControl>
-            </Grid>
-          </Grid>
-        </CardContent>
-
-        {/* Tableau des permissions */}
-        {entityList && Object.keys(entityList).length > 0 && (
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <Card>
+          {/* ================= INFOS ROLE ================= */}
           <CardContent>
-            <TableContainer component={Paper}>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell><strong>Entité</strong></TableCell>
-                    <TableCell align="center"><strong>Tout sélectionner</strong></TableCell>
-                    {
-                      Object.keys(permissionList).map((perm)=> (
-                      <TableCell key={perm} align="center">
-                        <strong>{perm}</strong>
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                  <TableRow>
-                      <TableCell colSpan={2}><strong>Tout gérer</strong></TableCell>
-                      {Object.keys(permissionList).map((perm) => (
-                        <TableCell key={perm} align="center">
+            <Grid container spacing={3}>
+              <Grid item xs={12}>
+                <Typography variant="h6" fontWeight="bold">
+                  Informations du rôle
+                </Typography>
+              </Grid>
+
+              <Grid item xs={12}>
+                <FormControl fullWidth>
+                  <Controller
+                    name="name"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        autoFocus
+                        label="Nom du rôle *"
+                        variant="standard"
+                        error={Boolean(errors.name)}
+                        InputProps={{
+                          sx: {
+                            fontSize: 24,
+                            fontWeight: 'bold'
+                          }
+                        }}
+                      />
+                    )}
+                  />
+                  {errors.name && (
+                    <FormHelperText sx={{ color: 'error.main' }}>
+                      {errors.name.message}
+                    </FormHelperText>
+                  )}
+                </FormControl>
+              </Grid>
+
+              <Grid item xs={12}>
+                <FormControl fullWidth>
+                  <Controller
+                    name="displayName"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        label="Nom à afficher"
+                        variant="standard"
+                        multiline
+                        rows={2}
+                        error={Boolean(errors.displayName)}
+                      />
+                    )}
+                  />
+                </FormControl>
+              </Grid>
+
+              <Grid item xs={12}>
+                <FormControl>
+                  <Controller
+                    name="sendRequesterEmail"
+                    control={control}
+                    render={({ field }) => (
+                      <FormControlLabel
+                        control={
                           <Checkbox
-                            checked={isAllPermissionsSelected(perm)}
-                            indeterminate={isSomePermissionsSelected(perm)}
-                            onChange={() => handleToggleAllForPermission(perm)}
+                            checked={Boolean(field.value)}
+                            onChange={e => field.onChange(e.target.checked)}
                           />
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                </TableHead>
-                <TableBody>
-                  {Object.keys(entityList).map((entity) => {
-                      return (
-                        <TableRow key={entity}>
-                        <TableCell>{entity}</TableCell>
-                        <TableCell align="center">
-                          <Checkbox
-                            checked={Object.keys(permissionList).every((perm) =>{
-                              return entityPermissions[entity]?.[perm]
-                            } )}
-                            indeterminate={
-                              !Object.keys(permissionList).every((perm) => entityPermissions[entity]?.[perm]) &&
-                              Object.keys(permissionList).some((perm) => entityPermissions[entity]?.[perm])
-                            }
-                            onChange={() => handleSelectAll(entity)}
-                          />
-                        </TableCell>
-                        {Object.keys(permissionList).map((perm) => (
-                          <TableCell key={`${entity}-${perm}`} align="center">
+                        }
+                        label="Envoyer un email au role"
+                      />
+                    )}
+                  />
+                </FormControl>
+              </Grid>
+
+              <Grid item xs={12}>
+              <FormControl>
+                <Controller
+                  name="isForOperator"
+                  control={control}
+                  render={({ field }) => (
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={Boolean(field.value)}
+                          onChange={e => field.onChange(e.target.checked)}
+                        />
+                      }
+                      label="Rôle destiné aux opérateurs"
+                    />
+                  )}
+                />
+              </FormControl>
+              </Grid>
+
+
+            </Grid>
+          </CardContent>
+
+          {/* ================= PERMISSIONS ================= */}
+          {entityList && Object.keys(entityList).length > 0 && (
+            <>
+              <Divider />
+              <CardContent sx={{ backgroundColor: '#fafafa' }}>
+                <Typography variant="h6" fontWeight="bold" mb={2}>
+                  Gestion des permissions
+                </Typography>
+
+                <TableContainer component={Paper} variant="outlined">
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell><strong>Entité</strong></TableCell>
+                        <TableCell align="center"><strong>Tout sélectionner</strong></TableCell>
+                        {Object.keys(permissionList).map(perm => (
+                          <TableCell key={perm} align="center">
+                            <strong>{perm}</strong>
+                          </TableCell>
+                        ))}
+                      </TableRow>
+
+                      <TableRow>
+                        <TableCell colSpan={2}><strong>Tout gérer</strong></TableCell>
+                        {Object.keys(permissionList).map(perm => (
+                          <TableCell key={perm} align="center">
                             <Checkbox
-                              checked={entityPermissions[entity]?.[perm] || false}
-                              onChange={() => handlePermissionChange(entity, perm)}
+                              checked={isAllPermissionsSelected(perm)}
+                              indeterminate={isSomePermissionsSelected(perm)}
+                              onChange={() => handleToggleAllForPermission(perm)}
                             />
                           </TableCell>
                         ))}
-                          </TableRow>
-                      )})
-                    }
+                      </TableRow>
+                    </TableHead>
 
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </CardContent>
-        )}
+                    <TableBody>
+                      {Object.keys(entityList).map(entity => (
+                        <TableRow key={entity} hover>
+                          <TableCell>{entity}</TableCell>
+                          <TableCell align="center">
+                            <Checkbox
+                              checked={Object.keys(permissionList).every(
+                                perm => entityPermissions[entity]?.[perm]
+                              )}
+                              indeterminate={
+                                Object.keys(permissionList).some(
+                                  perm => entityPermissions[entity]?.[perm]
+                                ) &&
+                                !Object.keys(permissionList).every(
+                                  perm => entityPermissions[entity]?.[perm]
+                                )
+                              }
+                              onChange={() => handleSelectAll(entity)}
+                            />
+                          </TableCell>
 
-        <Divider />
+                          {Object.keys(permissionList).map(perm => (
+                            <TableCell key={`${entity}-${perm}`} align="center">
+                              <Checkbox
+                                checked={entityPermissions[entity]?.[perm] || false}
+                                onChange={() => handlePermissionChange(entity, perm)}
+                              />
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </CardContent>
+            </>
+          )}
 
-        <CardContent>
-          <Grid container spacing={6}>
-            <Grid item xs={12} md={4}>
-              {data && (
-                 ability.can(UserAction.Delete, EntityAbility.ROLE) && (
-                <Button size="medium" variant="outlined" color="error" onClick={() => handleDelete(data)}>
-                  Supprimer
-                </Button>
-                )
-              )}
-            </Grid>
-            <Grid item xs={12} md={8}>
-              <Box display="flex" justifyContent="flex-end">
-                <Button size="medium" variant="outlined" color="secondary" sx={{ mr: 2 }} onClick={resetAll}>
-                  Annuler
-                </Button>
-                {ability.can(UserAction.Delete, EntityAbility.ROLE) && (
-                <Button size="medium" type="submit" variant="outlined">
-                  Enregistrer
-                </Button>
+          {/* ================= ACTIONS ================= */}
+          <Divider />
+          <CardContent>
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={4}>
+                {data && ability.can(UserAction.Delete, EntityAbility.ROLE) && (
+                  <Button color="error" variant="outlined" onClick={() => handleDelete(data)}>
+                    Supprimer
+                  </Button>
                 )}
-              </Box>
+              </Grid>
+
+              <Grid item xs={12} md={8}>
+                <Box display="flex" justifyContent="flex-end" gap={2}>
+                  <Button variant="outlined" color="secondary" onClick={resetAll}>
+                    Annuler
+                  </Button>
+
+                  {ability.can(data ? UserAction.Edit : UserAction.Create, EntityAbility.ROLE) && (
+                    <Button type="submit" variant="contained">
+                      Enregistrer
+                    </Button>
+                  )}
+                </Box>
+              </Grid>
             </Grid>
-          </Grid>
-        </CardContent>
-      </Card>
-    </form>
+          </CardContent>
+        </Card>
+      </form>
+
   </>
   )
 }

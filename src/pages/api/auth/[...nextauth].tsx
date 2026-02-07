@@ -1,6 +1,7 @@
 import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials";
 import { getBackendUrl } from "src/utils/backendUrl";
+import CryptoJS from "crypto-js";
 
 export const authOptions = {
   // Configure one or more authentication providers
@@ -22,33 +23,40 @@ export const authOptions = {
       },
     async authorize(credentials) {
     try {
-      const { username, password } = credentials as any;
+      const { username, password } = credentials as any ;
+      const SECRET_KEY = process.env.NEXT_PUBLIC_CRYPTO_KEY ;
+      const decryptedPassword = CryptoJS.AES.decrypt(password, SECRET_KEY).toString(CryptoJS.enc.Utf8);
+      const decryptedUsername = CryptoJS.AES.decrypt(username, SECRET_KEY).toString(CryptoJS.enc.Utf8);
+
       const url=getBackendUrl('auth/login')
-      console.log('sdsdsd',url)
       const res = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({username: decryptedUsername, password: decryptedPassword }),
       });
 
       const user = await res.json();
 
-      if (!res.ok) {
-        console.error("LOGIN FAILED:", user);
-        return null; // ✅ PAS DE THROW
-      }
 
-      if (!user || !user.token) {
-        return null;
-      }
-      console.error("LOGIN :", user);
-      return user; // ✅ SUCCESS
+  if (!res.ok) {
+    // 🔥 On remonte TOUT le message backend
+    throw new Error(
+      JSON.stringify({
+        status: res.status,
+        code: user.code,
+        message: user.description
+      })
+    );
+  }
+
+return user; // ✅ SUCCESS
     } catch (error) {
       console.error("AUTHORIZE ERROR:", error);
 
-return null; // ✅ TOUJOURS
+    throw new Error(error.message || "Erreur de connexion");
+
     }
 }
 

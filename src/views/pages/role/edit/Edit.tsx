@@ -17,12 +17,11 @@ import Alert from '@mui/material/Alert'
 import { useDispatch } from 'react-redux'
 import { AppDispatch } from 'src/redux/store'
 import AddCard from '../add/AddCard'
-import { RoleEditDto } from 'src/dto/Role/Role-dto-view'
 
 
 
 
-const RoleEdit = (props:RoleEditDto) => {
+const RoleEdit = (props:any) => {
 const {data,access}=props
   // ** State
   const [error] = useState<boolean>(false)

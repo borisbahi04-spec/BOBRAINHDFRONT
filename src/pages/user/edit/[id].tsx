@@ -1,6 +1,6 @@
 // ** Demo Components Imports
+import { useEffect } from 'react';
 import { getSession } from 'next-auth/react';
-import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useSettings } from 'src/@core/hooks/useSettings';
 import { EntityAbility, UserAction } from 'src/configs/Action';
@@ -9,15 +9,17 @@ import { getroles } from 'src/redux/reducers/Role/RoleReducer';
 import { RootState } from 'src/redux/store';
 import ExpiredSessionDialog from 'src/views/pages/confirmDialog/ExpiredSessionDialog';
 import EditView from 'src/views/pages/user/edit/Edit'
+import { getdepartments } from 'src/redux/reducers/department/department-reducer';
 // ** Styled Component
 
 const UserEdit = (props:any) => {
 
   const rolestore = useSelector((state: RootState) => state.role.data);
   const branchstore = useSelector((state: RootState) => state.branch.data);
+  const departmentstore = useSelector((state: RootState) => state.department.data);
 
 
-  const {data,roleData,branchData}=props;
+  const {data,roleData,branchData,departmentData}=props;
 
   const { settings, saveSettings } = useSettings()
 
@@ -38,13 +40,14 @@ const UserEdit = (props:any) => {
   useEffect(()=>{
     dispatch(getroles(roleData));
     dispatch(getbranchs(branchData));
+    dispatch(getdepartments(departmentData));
   },[dispatch])
 
 
 
   return (
       data?
-        <EditView data={data} roles={rolestore} branchs={branchstore}/>
+        <EditView data={data} roles={rolestore} branchs={branchstore} departments={departmentstore}/>
       :
        <ExpiredSessionDialog/>
   )
@@ -66,7 +69,7 @@ export async function getServerSideProps(context: {req?: any; }) {
   try{
   const {token}=session?.user;
 
-    const useredit = await fetch(`${process.env.PUBLIC_URL}/user/${id}`,{
+    const useredit = await fetch(`${process.env.PUBLIC_URL}/${process.env.ENTITYUSER}/${id}`,{
       headers: {
         'x-user-claims': `${token}`,
       },
@@ -74,25 +77,37 @@ export async function getServerSideProps(context: {req?: any; }) {
 
 
 
-    const branchResp = await fetch(`${process.env.PUBLIC_URL}/branch`,{
+    const branchResp = await fetch(`${process.env.PUBLIC_URL}/${process.env.ENTITYBRANCH}`,{
       headers: {
         'x-user-claims': `${token}`,
       },
     });
 
-    const roleResp = await fetch(`${process.env.PUBLIC_URL}/role`,{
+    const roleResp = await fetch(`${process.env.PUBLIC_URL}/${process.env.ENTITYROLE}`,{
       headers: {
         'x-user-claims': `${token}`,
       },
     });
+
+     const departmentResp = await fetch(`${process.env.PUBLIC_URL}/${process.env.ENTITYDEPARTMENT}`,{
+      headers: {
+        'x-user-claims': `${token}`,
+      },
+    });
+
 
 
 
 
 
     const usereditResponse:any = await useredit.json();
+        console.log('bbnbnbnbn')
+
     const roleResponse:any = await roleResp.json();
+
     const branchResponse:any = await branchResp.json();
+
+    const departmentResponse:any = await departmentResp.json();
 
 
 
@@ -110,7 +125,12 @@ export async function getServerSideProps(context: {req?: any; }) {
       permanent: false,
   }
 }}
-
+  if(!departmentResponse || departmentResponse.errors){
+    return {redirect: {
+      destination: '/login',
+      permanent: false,
+  }
+}}
 
 
 
@@ -119,7 +139,7 @@ return {
       data:usereditResponse,
       roleData:roleResponse,
       branchData:branchResponse,
-
+      departmentData:departmentResponse,
     },
   }
 } catch (e) {

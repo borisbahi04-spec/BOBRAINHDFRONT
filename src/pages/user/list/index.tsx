@@ -2,7 +2,7 @@
 /* eslint-disable newline-before-return */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 // ** React Imports
-import { useState, useEffect, MouseEvent, useCallback, useContext, useRef } from 'react'
+import { useState, useEffect, MouseEvent, useCallback, useContext, useRef, useMemo } from 'react'
 
 // ** Next Imports
 import Link from 'next/link'
@@ -13,7 +13,7 @@ import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
 import Menu from '@mui/material/Menu'
 import Grid from '@mui/material/Grid'
-import { DataGrid } from '@mui/x-data-grid'
+import { DataGrid, GridColDef } from '@mui/x-data-grid'
 import { styled } from '@mui/material/styles'
 import MenuItem from '@mui/material/MenuItem'
 import IconButton from '@mui/material/IconButton'
@@ -66,6 +66,7 @@ import { EntityAbility, UserAction } from 'src/configs/Action'
 import { FormControlLabel, FormGroup, Switch, Tooltip } from '@mui/material'
 import { useSettings } from 'src/@core/hooks/useSettings'
 import PinModal from 'src/modals/user/PinModal'
+import { PAGE_SETTINGS } from 'src/definitions/constantes'
 
 
 interface UserStatusType {
@@ -84,249 +85,198 @@ interface CellType {
 
 
 
-const MyColumns=(props:any)=>{
-    const {handlehasStatusChange,authuser,ability}=props;
-
-    return [
-      {
-        flex: 0.2,
-        minWidth: 150,
-        field: 'username',
-        headerName: 'Nom',
-        renderCell: ({ row }: CellType) => {
-          return (
-            <Typography noWrap variant='body2'>
-              {row.username}
-            </Typography>
-          )
-        }
-      },
-      {
-        flex: 0.2,
-        minWidth: 150,
-        field: 'email',
-        headerName: 'Email',
-        renderCell: ({ row }: CellType) => {
-          return (
-            <Typography noWrap variant='body2'>
-              {row.email?row.email:'-'}
-            </Typography>
-          )
-        }
-      },
-      {
-        flex: 0.2,
-        minWidth: 150,
-        field: 'phoneNumber',
-        headerName: 'Téléphone',
-        renderCell: ({ row }: CellType) => {
-          return (
-            <Typography noWrap variant='body2'>
-              {row.phoneNumber?row.phoneNumber:'-'}
-            </Typography>
-          )
-        }
-      },
-      {
-        flex: 0.2,
-        minWidth: 150,
-        field: 'branch',
-        headerName: 'Surccusale',
-        renderCell: ({ row }: CellType) => {
-          return (
-            <Typography noWrap variant='body2'>
-              {row.branch?row.branch?.displayName:'-'}
-            </Typography>
-          )
-        }
-      },
-      {
-        flex: 0.2,
-        minWidth: 100,
-        field: 'roleId',
-        headerName: 'Role',
-        renderCell: ({ row }: CellType) => {
-          return (
-            <Typography noWrap variant='body2'>
-              {row.role?row.role.name:'-'}
-            </Typography>
-          )
-        }
-      },
-      {
-        flex: 0.2,
-        minWidth: 100,
-        field: 'isActive',
-        headerName: 'Statut',
-        renderCell: ({ row }: any) => {
-             return(
-              authuser.user.id!=row.id?
-              <FormGroup>
-                 { ability.can(UserAction.Edit, EntityAbility.USER) && (
-                  <FormControlLabel  control={
-                  <Switch
-                  name="hasStatus"
-                  size="medium"
-                  checked={row.isActive}
-                  onChange={(e:event)=>handlehasStatusChange(row.id,e)}
-                  inputProps={{ 'aria-label': 'controlled' }}
-                  />}/>
-                 )}
-              </FormGroup>:'-'
-
-              )
-
-        }
-      },
-      {
-        flex: 0.1,
-        minWidth: 150,
-        sortable: false,
-        field: 'actions',
-        headerName: 'Actions',
-        renderCell: ({ row }: CellType) => (
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            {  ability.can(UserAction.Edit, EntityAbility.USER) && (
-               authuser?.user?.id==row.id? "":
-                <Tooltip title={`Editer ${row.username}`}>
-                  <IconButton size='small' component={Link} href={ `/user/edit/${row.id}`}>
-                    <Icon icon='mdi:pencil-outline' color="green" fontSize={20} />
-                  </IconButton>
-                </Tooltip>
-                )
-            }
-          </Box>
-        )
-      }
-    ]
-}
 
 
 let sUser:any={value:''};
-const UserList = (props:any) => {
-  //branchData
-  // ** State
-  const [plan, setPlan] = useState<string>('')
-  const [value, setValue] = useState<string>('')
-  const [status, setStatus] = useState<string>('')
-  const [pageSize, setPageSize] = useState<number>(25)
-  const [isEditMode, setIsEditMode] = useState<boolean>(false)
-  const [user, setUser] = useState<any>(props?.data)
-  const { settings, saveSettings } = useSettings()
+const UserList = (props: any) => {
+  const dispatch = useDispatch<AppDispatch>()
   const ability = useContext(AbilityContext)
-
-
-  const session = useSession();
-  const authuser=session?.data?.user?.session;
-
-  // ** Hooks
-   const dispatch = useDispatch<AppDispatch>()
-  const store = useSelector((state: RootState) => state?.user?.data)
+  const [value, setValue] = useState<string>('')
+  const { settings, saveSettings } = useSettings()
+  const { data: session } = useSession()
   let pgquery:any={page:1,per_page:25};
 
+  const authUser = session?.user?.session
+  const usersState = useSelector((state: RootState) => state.user.data)
+
+  const searchRef = useRef<string>('')
+  const paginationRef = useRef({ page: 1, per_page: 25 })
+
+  const [pageSize, setPageSize] = useState(25)
+  const [searchValue, setSearchValue] = useState('')
+
+  // ----------------------------------------------------------------------
+  // INIT
+  // ----------------------------------------------------------------------
+
+  useEffect(() => {
+    if (!session) router.push('/login')
+  }, [session])
+
+  useEffect(() => {
+    saveSettings({
+      ...settings,
+      iconPage: PAGE_SETTINGS.user.icon,
+      titlePage: PAGE_SETTINGS.user.title
+    })
+  }, [])
+
+  useEffect(() => {
+    dispatch(getusers(props.resdata))
+    dispatch(getbranchs(props.branchData))
+    dispatch(getroles(props.roleData))
+  }, [dispatch])
+
+  // ----------------------------------------------------------------------
+  // HANDLERS
+  // ----------------------------------------------------------------------
 
 
 
   const handleFilter = (val: any) => {
-    setValue(val)
-    sUser={...sUser,value:val}
-    const onSuccess=(res)=>{
-      //setIsLoading(false)
-    }
-    console.log('oioioioioio',sUser)
-     dispatch(RST_getSearchUsersAction(sUser,pgquery,onSuccess))
-   }
-
-  const {branchData,roleData}=props;
-
-
-
-  const handleAddUser = ()=> {
-    const {data}=store;
-      router.push(`/user/add`);
-
-  }
-
-  const handlehasStatusChange = (userId,event: React.ChangeEvent<HTMLInputElement>)=> {
-    const onSuccess=()=>{
-      dispatch(RST_UsersAction())
-    }
-    const onError=()=>{
-      console.log('erreur')
-    }
-    if(authuser.user.id!=userId){
-      dispatch(RST_UpdateUserAction(userId,{isActive:event.target.checked},onSuccess,onError))
-    }
-  }
-
-
-
-
-  useEffect(() => {
-    if (!session) {
-      router.push('/login');
-    }
-  }, [session, router]);
-
-  useEffect(() => {
-        saveSettings({ ...settings,
-            iconPage:'mdi:account-group',
-            titlePage: 'LISTE UTILISATEURS'
-           })
-  },[])
-
-   useEffect(() => {
-        dispatch(getusers(props?.resdata));
-        dispatch(getbranchs(branchData))
-        dispatch(getroles(roleData))
-     },[dispatch])
-
-     const onUserPageSuccess=(res)=>{
-      console.log(res)
+      setValue(val)
+      sUser={...sUser,value:val}
+      const onSuccess=()=>{
+        //setIsLoading(false)
       }
+       dispatch(RST_getSearchUsersAction(sUser.value,pgquery,onSuccess))
+     }
 
+  const handleStatusChange = useCallback(
+    (userId: number, checked: boolean) => {
+      if (authUser?.user?.id === userId) return
 
-      if(store?.data!=null){
-        return (
-        <Grid container spacing={6}>
+      dispatch(
+        RST_UpdateUserAction(
+          userId,
+          { isActive: checked },
+          () => dispatch(RST_UsersAction()),
+          () => {}
+        )
+      )
+    },
+    [dispatch, authUser]
+  )
+
+  const handleAddUser = () => router.push('/user/add')
+
+  // ----------------------------------------------------------------------
+  // COLUMNS
+  // ----------------------------------------------------------------------
+
+  const columns: GridColDef[] = useMemo(
+    () => [
+      { field: 'username', headerName: 'Nom', flex: 0.2, minWidth: 150 },
+      { field: 'email', headerName: 'Email', flex: 0.2, minWidth: 150 },
+      { field: 'phoneNumber', headerName: 'Téléphone', flex: 0.2, minWidth: 150 },
+      {
+        field: 'branch',
+        headerName: 'Succursale',
+        flex: 0.2,
+        renderCell: ({ row }) => row.branch?.displayName || '-'
+      },
+      {
+        field: 'role',
+        headerName: 'Rôle',
+        flex: 0.2,
+        renderCell: ({ row }) => row.role?.name || '-'
+      },
+       {
+        field: 'department',
+        headerName: 'Département',
+        flex: 0.2,
+        renderCell: ({ row }) => row.department?.displayName || '-'
+      },
+      {
+        field: 'isActive',
+        headerName: 'Statut',
+        minWidth: 120,
+        renderCell: ({ row }) =>
+          authUser?.user?.id !== row.id && ability.can(UserAction.Edit, EntityAbility.USER) ? (
+            <FormGroup>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={row.isActive}
+                    onChange={e => handleStatusChange(row.id, e.target.checked)}
+                  />
+                }
+                label=''
+              />
+            </FormGroup>
+          ) : (
+            '-'
+          )
+      },
+      {
+        field: 'actions',
+        headerName: 'Actions',
+        sortable: false,
+        minWidth: 120,
+        renderCell: ({ row }) =>
+          ability.can(UserAction.Edit, EntityAbility.USER) &&
+          authUser?.user?.id !== row.id && (
+            <Tooltip title={`Éditer ${row.username}`}>
+              <IconButton component={Link} href={`/user/edit/${row.id}`}>
+                <Icon icon='mdi:pencil-outline' color='green' />
+              </IconButton>
+            </Tooltip>
+          )
+      }
+    ],
+    [ability, authUser, handleStatusChange]
+  )
+
+  // ----------------------------------------------------------------------
+  // RENDER
+  // ----------------------------------------------------------------------
+
+  if (!usersState?.data) return <ExpiredSessionDialog />
+
+  return (
+    <Grid container spacing={6}>
       <Grid item xs={12}>
         <Card>
-          <TableHeader value={value} handleFilter={handleFilter} handleAddUser={handleAddUser} />
-              <DataGrid
-                autoHeight
-                rows={store && store.data}
-                columns={MyColumns({setIsEditMode:setIsEditMode,setUser:setUser,handlehasStatusChange:handlehasStatusChange,authuser:authuser,ability:ability})}
-                disableSelectionOnClick
-                rowsPerPageOptions={[5,10, 25, 50,75,100]}
-                rowCount={store.total}
-                pageSize={store.per_page}
-                page={store.current_page - 1}
-                paginationMode="server"
-                onPageChange={(newPage) => {
-                  pgquery={...pgquery,page:newPage + 1,per_page:pageSize}
-                  dispatch(RST_getSearchUsersAction(sUser.value,pgquery,onUserPageSuccess))
-                }}
-                onPageSizeChange={(newPageSize) => {
-                  setPageSize(newPageSize)
-                  pgquery={...pgquery,page:1,per_page:newPageSize}
-                  dispatch(RST_getSearchUsersAction(sUser.value,pgquery,onUserPageSuccess))
-                }}
+          <TableHeader
+            value={value}
+            handleFilter={handleFilter}
+            handleAddUser={handleAddUser}
+          />
 
-              />
+          <DataGrid
+            autoHeight
+            rows={usersState.data}
+            columns={columns}
+            pageSize={usersState.per_page}
+            rowCount={usersState.total}
+            paginationMode='server'
+            rowsPerPageOptions={[10, 25, 50, 100]}
+            onPageChange={page => {
+              paginationRef.current.page = page + 1
+              dispatch(
+                RST_getSearchUsersAction(
+                  searchRef.current,
+                  paginationRef.current,
+                  () => {}
+                )
+              )
+            }}
+            onPageSizeChange={size => {
+              setPageSize(size)
+              paginationRef.current = { page: 1, per_page: size }
+              dispatch(
+                RST_getSearchUsersAction(
+                  searchRef.current,
+                  paginationRef.current,
+                  () => {}
+                )
+              )
+            }}
+          />
         </Card>
       </Grid>
-
-      {/*addUserOpen?
-      <AddUserDrawer  open={addUserOpen} toggle={toggleAddUserDrawer} isEditMode={isEditMode} setIsEditMode={setIsEditMode} row={isEditMode?user:''} setUser={setUser}/>
-      :''*/}
-        </Grid>
-        )
-      }else{
-        return <ExpiredSessionDialog/>
-      }
-
-
-
+    </Grid>
+  )
 }
 
 UserList.acl = {

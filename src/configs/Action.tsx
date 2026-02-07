@@ -5,6 +5,11 @@ export enum UserAction{
   Edit="edit",
   Delete="delete",
   Stream="stream",
+  Update="update",
+  Treated="treated",
+  Approval='approval',
+  Cancel='cancel',
+  Close='close'
 }
 
 export enum AccessTypeEnum {
@@ -35,7 +40,9 @@ export enum EntityAbility{
   All="all",
   USER="User",
   ROLE="Role",
-
+  STATION="Station",
+  DEPARTMENT='Department',
+  REQUESTER='Requester',
   BRANCH="Branch",
 
 

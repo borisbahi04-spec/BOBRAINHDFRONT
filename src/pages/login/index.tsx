@@ -2,21 +2,20 @@
 import { useState, ReactNode } from 'react'
 
 // ** Next Imports
-import Link from 'next/link'
 
 // ** MUI Components
 import Button from '@mui/material/Button'
 import TextField from '@mui/material/TextField'
 import InputLabel from '@mui/material/InputLabel'
 import IconButton from '@mui/material/IconButton'
-import Box, { BoxProps } from '@mui/material/Box'
+import Box from '@mui/material/Box'
 import FormControl from '@mui/material/FormControl'
 import OutlinedInput from '@mui/material/OutlinedInput'
-import { styled, useTheme } from '@mui/material/styles'
+import { useTheme } from '@mui/material/styles'
 import FormHelperText from '@mui/material/FormHelperText'
 import InputAdornment from '@mui/material/InputAdornment'
-import Typography, { TypographyProps } from '@mui/material/Typography'
-import MuiFormControlLabel, { FormControlLabelProps } from '@mui/material/FormControlLabel'
+import Typography from '@mui/material/Typography'
+import CryptoJS from "crypto-js";
 
 // ** Icon Imports
 import Icon from 'src/@core/components/icon'
@@ -99,23 +98,36 @@ const LoginPage = () => {
     })
   }*/
   const onSubmit = async (data: FormData) => {
+   const SECRET_KEY = process.env.NEXT_PUBLIC_CRYPTO_KEY ;
+
    const { username, password } = data
+   // chiffrement AES
+  const encryptedUsername = CryptoJS.AES.encrypt(username, SECRET_KEY).toString();
+  const encryptedPassword = CryptoJS.AES.encrypt(password, SECRET_KEY).toString();
+
      const res:any =await signIn("credentials", {
-      username: username,
-      password: password,
+      username: encryptedUsername,
+      password: encryptedPassword,
       redirect: false,
       callbackUrl: `/`,
     })
 
-
+    // 🔹 Vérifie l'erreur
     if (res?.error) {
-      setShowAlert(res.error);
-    } else {
-      setShowAlert('');
-    }
-    if (res.url) router.push(res.url);
+      let err;
+      try {
+        err = JSON.parse(res.error); // si authorize() a throw JSON
+      } catch {
+        err = { message: res.error };
+      }
 
-  };
+      setShowAlert(err.message || "Nomm d'utilisateur ou mot de passe incorrect");
+    } else {
+      setShowAlert(''); // login OK
+    }
+        if (res.url) router.push(res.url);
+
+      };
 
   return (
     <Box className='content-center'>

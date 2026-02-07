@@ -1,0 +1,80 @@
+import NextAuth from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
+import { getBackendUrl } from "src/utils/backendUrl";
+
+export const authOptions = {
+  secret: process.env.NEXTAUTH_SECRET,
+
+  providers: [
+    CredentialsProvider({
+      name: "credentials",
+      credentials: {
+        username: { label: "Username", type: "text" },
+        password: { label: "Password", type: "password" }
+      },
+      async authorize(credentials) {
+        try {
+          const { username, password } = credentials as any;
+          const res = await fetch(`${getBackendUrl()}/auth/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password }),
+          });
+
+          const data = await res.json();
+
+            if (!res.ok) {
+              // 🔥 Ici on throw le message backend
+              throw new Error(JSON.stringify({
+                status: res.status,
+                code: data.code,
+                message: data.message
+              }));
+            }
+
+return data;
+        } catch (error) {
+          console.error("AUTHORIZE ERROR:", error);
+
+return null;
+        }
+      }
+    })
+  ],
+  cookies: {
+  sessionToken: {
+    name: 'next-auth.session-token',
+    options: {
+      httpOnly: true,
+      sameSite: 'lax',
+      path: '/',
+      secure: false, // 🔥 CRITIQUE EN HTTP
+    },
+  },
+},
+
+  session: {
+    strategy: "jwt",
+  },
+
+   callbacks: {
+
+    async jwt({token, user, account}) {
+      return { ...token, ...user };
+    },
+
+    async session({ session, token, user }) {
+      // Send properties to the client, like an access_token from a provider.
+      session.user=token;
+
+
+return session;
+    },
+  },
+
+  pages: {
+    signIn: process.env.NEXT_SIGNINROUTE,
+  }
+};
+
+export default NextAuth(authOptions as any);

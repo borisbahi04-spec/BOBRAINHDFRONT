@@ -10,7 +10,7 @@ import ExpiredSessionDialog from 'src/views/pages/confirmDialog/ExpiredSessionDi
 import EditView from 'src/views/pages/role/edit/Edit'
 // ** Styled Component
 
-const UserEdit = (props:any) => {
+const RoleEdit = (props:any) => {
 
   const accessstore = useSelector((state: RootState) => state?.access?.data);
 
@@ -37,7 +37,6 @@ const UserEdit = (props:any) => {
     dispatch(getaccess(accessData));
   },[dispatch])
 
- console.log('fdfdfdfdf',accessstore)
 
   return (
       data?
@@ -47,12 +46,12 @@ const UserEdit = (props:any) => {
   )
 }
 
-UserEdit.acl = {
+RoleEdit.acl = {
   action:UserAction.Edit,
   subject:EntityAbility.ROLE
 }
 
-UserEdit.authGuard = true
+RoleEdit.authGuard = true
 
 export async function getServerSideProps(context: {req?: any; }) {
   const { req} = context;
@@ -64,7 +63,7 @@ export async function getServerSideProps(context: {req?: any; }) {
   const {token}=session?.user;
 
 
-  const roleedit = await fetch(`${process.env.PUBLIC_URL}/role/${id}`,{
+  const roleedit = await fetch(`${process.env.PUBLIC_URL}/${process.env.ENTITYROLE}/${id}`,{
     headers: {
       'x-user-claims': `${token}`,
     },
@@ -110,4 +109,4 @@ return {
   };
 }
 }
-export default UserEdit
+export default RoleEdit

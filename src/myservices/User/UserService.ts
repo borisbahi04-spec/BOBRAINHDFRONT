@@ -5,7 +5,7 @@ import { CreateUserDto, UpdateUserDto } from "src/dto/user/user.dto";
 import queryString from "query-string";
 
 const userUri='user';
-const relations='role,branch';
+const relations='role,branch,department';
 
 export const  RST_UsersService = ()=>{
 const http = new HttpService();

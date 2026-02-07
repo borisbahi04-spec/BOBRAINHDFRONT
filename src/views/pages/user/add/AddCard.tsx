@@ -4,24 +4,10 @@
 import { useState, useEffect, useContext } from 'react'
 
 // ** MUI Imports
-import Button from '@mui/material/Button'
 import TextField from '@mui/material/TextField'
 
-import IconButton from '@mui/material/IconButton'
-import InputLabel from '@mui/material/InputLabel'
-import Box, { BoxProps } from '@mui/material/Box'
-import Grid, { GridProps } from '@mui/material/Grid'
-import { styled } from '@mui/material/styles'
-import Select from '@mui/material/Select'
-import MenuItem from '@mui/material/MenuItem'
-import CardContent, { CardContentProps } from '@mui/material/CardContent'
-import EmailIcon from '@mui/icons-material/Email';
-import PhoneIcon from '@mui/icons-material/Phone';
-import PeopleIcon from '@mui/icons-material/People';
-import WarehouseIcon from '@mui/icons-material/Warehouse';
 
 // ** Icon Imports
-import Icon from 'src/@core/components/icon'
 
 // ** Third Party Imports
 
@@ -39,17 +25,20 @@ import toast from 'react-hot-toast'
 
 import { useDispatch, useSelector } from 'react-redux'
 import { usePrevious } from 'src/myCustomFunctions'
-import { Accordion, AccordionDetails, AccordionSummary, Card, Checkbox, Divider, FormControlLabel, FormGroup, InputAdornment, OutlinedInput, Switch, Typography, makeStyles } from '@mui/material'
 import { emailRegExp, phoneRegExp, regexpasswords, showErrors } from 'src/helpers'
 import { RST_UsersAction, RST_CreateUserAction, RST_UpdateUserAction, RST_DeleteUserAction } from 'src/redux/actions/Users/UserActions'
 import { CreateUserDto } from 'src/dto/user/user.dto'
 import { useRouter } from 'next/router'
-import { RST_PinCodeAction } from 'src/redux/actions/Pins/PinActions'
 import { UserCreateDto } from 'src/dto/user/user-dto-view'
-import BasicAccordion from 'src/myCustomComponent/Storelist'
-import { EntityAbility, UserAction } from 'src/configs/Action'
 import { AbilityContext } from 'src/layouts/components/acl/Can'
-import { enumCashewSage, RoleTypeEnum } from 'src/definitions/enum'
+import { Box, Button, Card, CardContent, Divider, Grid, Icon, IconButton, InputAdornment, MenuItem } from '@mui/material'
+import EmailIcon from '@mui/icons-material/Email'
+import PhoneIcon from '@mui/icons-material/Phone'
+import PeopleIcon from '@mui/icons-material/People'
+import WarehouseIcon from '@mui/icons-material/Warehouse'
+import { State } from '@popperjs/core'
+import { UserAction, EntityAbility } from 'src/configs/Action'
+import { RoleTypeEnum } from 'src/definitions/enum'
 
 
 interface PinData {
@@ -66,6 +55,7 @@ interface UserData {
   phoneNumber: string
   email:string
   roleId:string
+  departmentId:string
   branchId:boolean
 }
 
@@ -73,7 +63,7 @@ interface UserData {
 
 const AddCard = (props:UserCreateDto) => {
   const router = useRouter()
-  const {data,roles,branchs}=props;
+  const {data,roles,branchs,departments}=props;
   const ability = useContext(AbilityContext)
 
 const defaultValues = {
@@ -82,6 +72,7 @@ const defaultValues = {
   phoneNumber: '',
   email: '',
   roleId:'',
+  departmentId:'',
   branchId:'',
   newPassword:'',
 }
@@ -116,6 +107,7 @@ const defaultValues = {
    .nullable()
     ,
     roleId: yup.string().required(` Rôle est obligatoire`),
+    departmentId: yup.string().required(` Département est obligatoire`),
     branchId: yup.string().required(` Surccusale est obligatoire`),
 
     newPassword: yup.string().transform(x => x === '' ? undefined : x)
@@ -182,15 +174,16 @@ const  edit=(data:UserData)=> {
       toast.error(`${userErrMess(errors)}`,{position:'top-center'})
    }
 
-   console.log('ooooooooooo',data)
 
 
-   if(prevUser.username!=data.username || prevUser.phoneNumber!=data.phoneNumber ||prevUser.branchId!=data.branchId ||
-     prevUser.email!=data.email  || prevUser.roleId!=data.roleId  || prevUser.newPassword!=data.newPassword ){
+     if(prevUser.username!=data.username || prevUser.phoneNumber!=data.phoneNumber ||prevUser.branchId!=data.branchId ||
+     prevUser.email!=data.email  || prevUser.roleId!=data.roleId  || prevUser.newPassword!=data.newPassword
+     || prevUser.departmentId!=data.departmentId ){
       dispatch(RST_UpdateUserAction(data.id,data,onUpdateUserSuccess,onUpdateUserError))
    }else{
     resetAll()
    }
+
  }
 
  const handleDelete = (row:any) => {
@@ -209,14 +202,14 @@ const  edit=(data:UserData)=> {
 const handleClickShowNewPassword = () => {
   setValues({ ...values, newPassword: !values.newPassword })
 }
-const handleMouseDownNewPassword = (event: MouseEvent<HTMLButtonElement>) => {
+const handleMouseDownNewPassword = (event: React.MouseEvent<HTMLButtonElement>) => {
   event.preventDefault()
 }
 
 
   const onSubmit = (dt:CreateUserDto,e:any) =>{
     e.preventDefault();
-
+console.log('dt45445',dt)
 return data? edit(dt):create(dt);
 }
 
@@ -229,7 +222,9 @@ useEffect(()=>{
     setValue('username', data.username)
     setValue('phoneNumber', data.phoneNumber)
     setValue('email', data.email?data.email:'')
+    setValue('departmentId', data.departmentId)
     setValue('roleId', data.roleId)
+    setValue('newPassword', '')
     setValue("branchId",data?.branchId)
   }
 },[])
@@ -328,40 +323,75 @@ useEffect(()=>{
                 {errors.phoneNumber && <FormHelperText sx={{ color: 'error.main' }}>{errors.phoneNumber.message}</FormHelperText>}
               </FormControl>
               <FormControl fullWidth sx={{ mb: 6 }}>
-              <Controller
-                  name='roleId'
-                  control={control}
-                  rules={{ required: true }}
-                  render={({ field: { value, onChange } }) => (
-                  <TextField
-                    fullWidth
-                    select
-                    value={value}
-                    id='select-role'
-                    label='Rôle'
-                    inputProps={{ placeholder: 'Sélectionner un rôle' }}
-                    onChange={onChange}
-                    variant="standard"
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <PeopleIcon />
-                        </InputAdornment>
-                      ),
-                    }}
-                  >
+                <Controller
+                    name='roleId'
+                    control={control}
+                    rules={{ required: true }}
+                    render={({ field: { value, onChange } }) => (
+                    <TextField
+                      fullWidth
+                      select
+                      value={value}
+                      id='select-role'
+                      label='Rôle'
+                      inputProps={{ placeholder: 'Sélectionner un rôle' }}
+                      onChange={onChange}
+                      variant="standard"
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <PeopleIcon />
+                          </InputAdornment>
+                        ),
+                      }}
+                    >
 
-                  {
-                      roles && roles?.data?.map((data:any,index:any) =>{
-                        if( data?.name!=RoleTypeEnum.manager&& data?.name!=RoleTypeEnum.owner){
-                          return <MenuItem value={data.id}  key={index}>{data.name}</MenuItem>
+                    {
+                        roles && roles?.data?.map((data:any,index:any) =>{
+                          if(data?.name!=RoleTypeEnum.owner){
+                            return <MenuItem value={data.id}  key={index}>{data.name}</MenuItem>
+                          }
+                    })
                         }
-                  })
-                      }
-                </TextField>
-                )}
-              />
-              {errors.roleId && <FormHelperText sx={{ color: 'error.main' }}>{errors.roleId.message}</FormHelperText>}
+                  </TextField>
+                  )}
+                />
+                {errors.roleId && <FormHelperText sx={{ color: 'error.main' }}>{errors.roleId.message}</FormHelperText>}
+              </FormControl>
+               <FormControl fullWidth sx={{ mb: 6 }}>
+                <Controller
+                    name='departmentId'
+                    control={control}
+                    rules={{ required: true }}
+                    render={({ field: { value, onChange } }) => (
+                    <TextField
+                      fullWidth
+                      select
+                      value={value}
+                      id='select-department'
+                      label='Département'
+                      inputProps={{ placeholder: 'Sélectionner un département' }}
+                      onChange={onChange}
+                      variant="standard"
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <PeopleIcon />
+                          </InputAdornment>
+                        ),
+                      }}
+                    >
+
+                    {
+                    departments && departments?.data?.map((data:any,index:any) =>{
+                            return <MenuItem value={data.id}  key={index}>{data.displayName}</MenuItem>
+
+                    })
+                        }
+                  </TextField>
+                  )}
+                />
+                {errors.departmentId && <FormHelperText sx={{ color: 'error.main' }}>{errors.departmentId.message}</FormHelperText>}
               </FormControl>
               <FormControl fullWidth sx={{ mb: 6 }}>
               <Controller
@@ -391,7 +421,7 @@ useEffect(()=>{
                       branchs && branchs?.data?.map((data:any,index:any) =>{
                           return <MenuItem value={data.id}  key={index}>{data.displayName}</MenuItem>
                   })
-                      }
+                  }
                 </TextField>
                 )}
               />

@@ -4,7 +4,7 @@ export default async function handler(req:any,res:any) {
 
   const token = req.headers['x-user-claims'];
 
-  const relations='role,role.accessToRoles,branch';
+  const relations='role,role.accessToRoles,branch,department';
   const response = await fetch(`${getBackendUrl()}/${process.env.ENTITYUSER}?relations=${relations}`,{
     headers: {
       'x-user-claims': `${token}`,

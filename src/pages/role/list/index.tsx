@@ -188,12 +188,14 @@ const RoleList = (props:any) => {
     }
   }, [session, router]);
 
-  useEffect(() => {
-        saveSettings({ ...settings,
-            iconPage:'mdi:account-group',
-            titlePage: 'Liste Rôle'
-           })
-  },[])
+ useEffect(() => {
+  saveSettings({
+    ...settings,
+    iconPage: 'mdi:shield-account-outline',
+    titlePage: 'Rôles',
+  })
+}, [])
+
 
    useEffect(() => {
         dispatch(getroles(props?.resdata));
@@ -208,33 +210,33 @@ const RoleList = (props:any) => {
       if(store?.data!=null){
         return (
         <Grid container spacing={6}>
-      <Grid item xs={12}>
-        <Card>
-          <TableHeader value={value} handleFilter={handleFilter} handleAddRole={handleAddRole} />
-            <DataGrid
-            autoHeight
-            rows={store && store.data}
-            columns={MyColumns({setIsEditMode:setIsEditMode,setRole:setRole,handlehasStatusChange:handlehasStatusChange,authuser:authuser,ability:ability})}
-            disableSelectionOnClick
-            rowsPerPageOptions={[5,10, 25, 50,75,100]}
-            rowCount={store.total}
-            pageSize={store.per_page}
-            page={store.current_page - 1}
-            paginationMode="server"
-            onPageChange={(newPage) => {
-              pgquery={...pgquery,page:newPage + 1,per_page:pageSize}
-              dispatch(RST_getSearchRolesAction(sRole.value,pgquery,onRolePageSuccess))
-            }}
+          <Grid item xs={12}>
+            <Card>
+              <TableHeader value={value} handleFilter={handleFilter} handleAddRole={handleAddRole} />
+                <DataGrid
+                autoHeight
+                rows={store && store.data}
+                columns={MyColumns({setIsEditMode:setIsEditMode,setRole:setRole,handlehasStatusChange:handlehasStatusChange,authuser:authuser,ability:ability})}
+                disableSelectionOnClick
+                rowsPerPageOptions={[5,10, 25, 50,75,100]}
+                rowCount={store.total}
+                pageSize={store.per_page}
+                page={store.current_page - 1}
+                paginationMode="server"
+                onPageChange={(newPage) => {
+                  pgquery={...pgquery,page:newPage + 1,per_page:pageSize}
+                  dispatch(RST_getSearchRolesAction(sRole.value,pgquery,onRolePageSuccess))
+                }}
 
-            onPageSizeChange={(newPageSize) => {
-              setPageSize(newPageSize)
-              pgquery={...pgquery,page:1,per_page:newPageSize}
-              dispatch(RST_getSearchRolesAction(sRole.value,pgquery,onRolePageSuccess))
-            }}
-          />
-        </Card>
-      </Grid>
-     </Grid>
+                onPageSizeChange={(newPageSize) => {
+                  setPageSize(newPageSize)
+                  pgquery={...pgquery,page:1,per_page:newPageSize}
+                  dispatch(RST_getSearchRolesAction(sRole.value,pgquery,onRolePageSuccess))
+                }}
+              />
+            </Card>
+          </Grid>
+        </Grid>
         )
       }else{
         return <ExpiredSessionDialog/>

@@ -17,14 +17,12 @@ import Alert from '@mui/material/Alert'
 import { useDispatch } from 'react-redux'
 import { AppDispatch } from 'src/redux/store'
 import AddCard from '../add/AddCard'
-import { UserEditDto } from 'src/dto/user/user-dto-view'
 
 
 
 
-const UserEdit = (props:UserEditDto) => {
-const {data,roles,branchs}=props
-  // ** State
+const UserEdit = (props:any) => {
+const {data,roles,branchs,departments}=props
   const [error] = useState<boolean>(false)
 
   const dispatch = useDispatch<AppDispatch>()
@@ -37,7 +35,7 @@ const {data,roles,branchs}=props
       <>
         <Grid container spacing={2} direction="column" width='35%'>
           <Grid item xl={12} md={12} xs={12}>
-              <AddCard data={data} roles={roles} branchs={branchs} />
+              <AddCard data={data} roles={roles} branchs={branchs} departments={departments} />
             </Grid>
         </Grid>
 

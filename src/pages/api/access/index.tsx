@@ -6,7 +6,7 @@ export default async function handler(req:any,res:any) {
     headers: {
       'x-user-claims': `${token}`,
     }});
-
+  console.log('response status',response.status);
   if (response.status === 401) {
     // Handle the 401 response here
     res.status(200).json({ data:null });

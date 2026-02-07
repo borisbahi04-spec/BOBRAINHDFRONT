@@ -2,7 +2,7 @@ import { getBackendUrl } from "src/utils/backendUrl";
 
 export default async function handler(req:any,res:any) {
   const token = req.headers['x-user-claims'];
-  const relations="role,branch,branchToUsers";
+  const relations="role,branch,department,branchToUsers";
 
   const response = await fetch(`${getBackendUrl()}/${process.env.ENTITYUSER}/${req.query?.id}?relations=${relations}`,{
     headers: {
