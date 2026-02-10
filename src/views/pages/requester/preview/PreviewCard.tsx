@@ -118,8 +118,7 @@ const PreviewCard = ({ printref, t }: Props) => {
               Demandeur
             </Typography>
             <Typography>
-              {data?.createdBy?.userData?.firstName}{' '}
-              {data?.createdBy?.userData?.lastName}
+              {data?.createdBy?.userData?.username}{' '}
             </Typography>
             <Typography variant="body2" color="text.secondary">
               {data?.createdBy?.userData?.email??''}
