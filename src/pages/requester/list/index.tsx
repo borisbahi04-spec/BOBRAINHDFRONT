@@ -510,12 +510,9 @@ const List = ({ resdata, requesttypeData,stationData,userData }: any) => {
                               fetchData({ page: 1, per_page: size })
                             }}
                             sx={{
-                              minWidth: 800, // assure que le DataGrid dépasse la largeur mobile
-                              '& .MuiDataGrid-columnHeader, & .MuiDataGrid-cell': {
-                                whiteSpace: 'nowrap', // texte sur une seule ligne
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                              },
+                              '& .MuiDataGrid-main': {
+                                overflowX: 'auto'
+                              }
                             }}
                           />
                        </div>
