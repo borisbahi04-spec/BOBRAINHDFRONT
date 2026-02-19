@@ -76,29 +76,39 @@ const priorityColorMap: Record<PriorityEnum,'success' | 'warning' | 'error'> = {
 const useRequesterColumns = (ability: any): GridColDef[] => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
+  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'))
 
   return useMemo<GridColDef[]>(
     () => [
       {
         field: 'reference',
         headerName: 'Référence',
-        flex: 0.3,
-        renderCell: ({ row }) => <Typography noWrap>{row.reference}</Typography>
+        flex: 1,
+        minWidth: 130,
+        renderCell: ({ row }) => (
+          <Typography noWrap fontWeight={600}>
+            {row.reference}
+          </Typography>
+        )
       },
       {
         field: 'date',
         headerName: 'Date',
-        flex: 0.3,
+        flex: 1,
+        minWidth: 160,
         renderCell: ({ row }) => (
           <Typography noWrap variant="body2">
-            {moment(row?.createdAt).locale('fr').format('DD/MM/YYYY HH:mm:ss')}
+            {moment(row?.createdAt)
+              .locale('fr')
+              .format('DD/MM/YYYY HH:mm')}
           </Typography>
         )
       },
       {
         field: 'status',
         headerName: 'Statut',
-        flex: 0.2,
+        flex: 0.8,
+        minWidth: 120,
         renderCell: ({ row }) => {
           const status: enumStatus = row.status
 
@@ -115,44 +125,50 @@ const useRequesterColumns = (ability: any): GridColDef[] => {
       {
         field: 'requesttype',
         headerName: 'Type de demande',
-        flex: 0.3,
+        flex: 1,
+        minWidth: 150,
         hide: isMobile,
         renderCell: ({ row }) => row.requesttype?.displayName ?? '-'
       },
       {
         field: 'createdBy',
         headerName: 'Demandeur',
-        flex: 0.15,
-        hide: isMobile,
+        flex: 0.8,
+        minWidth: 120,
+        hide: isMobile || isTablet,
         renderCell: ({ row }) => row.createdBy?.username ?? '-'
       },
       {
         field: 'title',
         headerName: 'Titre',
-        flex: 0.25,
+        flex: 1,
+        minWidth: 180,
         hide: isMobile
       },
       {
         field: 'ticket',
         headerName: 'N° Ticket',
-        flex: 0.2,
+        flex: 0.8,
+        minWidth: 120,
         renderCell: ({ row }) => row.ticket ?? '-'
       },
       {
         field: 'station',
         headerName: 'Station',
-        flex: 0.2,
-        hide: isMobile,
+        flex: 1,
+        minWidth: 140,
+        hide: isMobile || isTablet,
         renderCell: ({ row }) => row.station?.displayName ?? '-'
       },
       {
         field: 'priority',
         headerName: 'Priorité',
-        flex: 0.15,
+        flex: 0.8,
+        minWidth: 120,
         renderCell: ({ row }) => {
           const priority: PriorityEnum = row.priority
 
-return (
+          return (
             <Chip
               label={priority}
               size={isMobile ? 'small' : 'medium'}
@@ -166,12 +182,14 @@ return (
         field: 'actions',
         headerName: 'Actions',
         sortable: false,
-        flex: isMobile ? 0.4 : 0.25,
+        minWidth: 120,
+        flex: 0.8,
+        align: 'center',
         renderCell: ({ row }) => (
           <>
             {ability.can(UserAction.Edit, EntityAbility.REQUESTER) &&
               row.status === enumStatus.Open && (
-                <Tooltip title={`Modifier la demande ${row.reference}`}>
+                <Tooltip title={`Modifier ${row.reference}`}>
                   <IconButton
                     size="small"
                     component={Link}
@@ -189,7 +207,7 @@ return (
                   component={Link}
                   href={`/requester/preview/${row.id}`}
                 >
-                  <Icon icon="mdi:details" color="blue" fontSize={20} />
+                  <Icon icon="mdi:eye-outline" color="blue" />
                 </IconButton>
               </Tooltip>
             )}
@@ -197,7 +215,7 @@ return (
         )
       }
     ],
-    [ability, isMobile]
+    [ability, isMobile, isTablet]
   )
 }
 
@@ -482,19 +500,27 @@ const List = ({ resdata, requesttypeData,stationData,userData }: any) => {
                         </CardContent>
                       </Card>
                     </Grid>
-                    <Grid item xs={12}>
-                      <Card>
+                        <Grid item xs={12} md={12} lg={12}>
+
+                         <Card>
                         <TableHeader
                           value={search}
                           handleFilter={handleFilter}
                           handleAddrequester={() => router.push('/requester/add')}
                         />
 
-                       <div style={{ width: '100%', overflowX: 'auto' }}>
+                       <div>
                           <DataGrid
                             autoHeight
                             rows={store?.data || []}
                             columns={columns}
+                            disableColumnMenu={isMobile}
+                            columnBuffer={3}
+                            sx={{
+                              '& .MuiDataGrid-columnHeaders': {
+                                backgroundColor: theme.palette.background.default
+                              }
+                            }}
                             page={store.current_page - 1}
                             pageSize={pageSize}
                             rowCount={store.total}
@@ -508,11 +534,6 @@ const List = ({ resdata, requesttypeData,stationData,userData }: any) => {
                               setPageSize(size)
                               setPage(1)
                               fetchData({ page: 1, per_page: size })
-                            }}
-                            sx={{
-                              '& .MuiDataGrid-main': {
-                                overflowX: 'auto'
-                              }
                             }}
                           />
                        </div>
