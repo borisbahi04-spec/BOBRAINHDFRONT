@@ -68,7 +68,7 @@ module.exports = withTM({
   // -----------------------
   // DevServer Proxy (dev uniquement)
   // -----------------------
-  devServer: {
+  /*devServer: {
     proxy: {
       '/ws': {
         target: `http://127.0.0.1:${backendPort}`,
@@ -76,5 +76,5 @@ module.exports = withTM({
         changeOrigin: true,
       },
     },
-  },
+  },*/
 })
