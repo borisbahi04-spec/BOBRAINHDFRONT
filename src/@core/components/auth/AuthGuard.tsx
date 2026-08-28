@@ -16,18 +16,17 @@ interface AuthGuardProps {
 const AuthGuard = (props: AuthGuardProps) => {
   const { children, fallback } = props
   const router = useRouter()
-  const { data: session } = useSession();
+  const { status } = useSession();
 
   useEffect(
     () => {
-      if (!router.isReady) {
+      if (!router.isReady || status === 'loading') {
         return
       }
 
-
       //check expired session
 
-      if (!session || session === null) {
+      if (status === 'unauthenticated') {
         if (router.asPath !== '/') {
           router.replace({pathname: '/login',query: { returnUrl: router.asPath }})
         } else {
@@ -35,12 +34,10 @@ const AuthGuard = (props: AuthGuardProps) => {
         }
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [router.route]
+    [router.isReady, router.asPath, status]
   )
 
-  if (session === null) {
-    //router.replace('/login')
+  if (status === 'loading' || status === 'unauthenticated') {
     return fallback
   }
 

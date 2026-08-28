@@ -15,22 +15,19 @@ interface GuestGuardProps {
 const GuestGuard = (props: GuestGuardProps) => {
   const { children, fallback } = props
   const router = useRouter()
-  const { data: session } = useSession();
-
+  const { status } = useSession();
 
   useEffect(() => {
-    if (!router.isReady) {
+    if (!router.isReady || status === 'loading') {
       return
     }
 
-    if (session) {
+    if (status === 'authenticated') {
       router.replace('/')
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router.route])
+  }, [router.isReady, router.route, status])
 
-  if (session !== null) {
-
+  if (status === 'loading' || status === 'authenticated') {
     return fallback
   }
 

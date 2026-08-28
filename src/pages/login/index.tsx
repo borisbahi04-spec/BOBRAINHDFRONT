@@ -39,8 +39,6 @@ import { Alert, Card, CardContent } from '@mui/material'
 import FooterIllustrationsV1 from './FooterIllustrationsV1'
 import { getProviders, getSession, signIn } from 'next-auth/react'
 import { useRouter } from 'next/router'
-import { store } from 'src/redux/store'
-import { SessionAction } from 'src/redux/actions/Auth/AuthActions'
 import { ImgStyled } from 'src/myCustomFunctions'
 
 // ** Styled Components
@@ -98,19 +96,18 @@ const LoginPage = () => {
     })
   }*/
   const onSubmit = async (data: FormData) => {
-   const SECRET_KEY = process.env.NEXT_PUBLIC_CRYPTO_KEY ;
+   const SECRET_KEY:any = process.env.NEXT_PUBLIC_CRYPTO_KEY ;
 
    const { username, password } = data
    // chiffrement AES
   const encryptedUsername = CryptoJS.AES.encrypt(username, SECRET_KEY).toString();
   const encryptedPassword = CryptoJS.AES.encrypt(password, SECRET_KEY).toString();
-
-     const res:any =await signIn("credentials", {
-      username: encryptedUsername,
-      password: encryptedPassword,
-      redirect: false,
-      callbackUrl: `/`,
-    })
+  const res:any =await signIn("credentials", {
+    username: encryptedUsername,
+    password: encryptedPassword,
+    redirect: false,
+    callbackUrl: `/`,
+  })
 
     // 🔹 Vérifie l'erreur
     if (res?.error) {
@@ -131,11 +128,18 @@ const LoginPage = () => {
 
   return (
     <Box className='content-center'>
-    <Card sx={{ zIndex: 1 }}>
-      <CardContent sx={{ p: theme => `${theme.spacing(12, 9, 7)} !important` }}>
+    <Card sx={{ zIndex: 1, width: '100%', maxWidth: 450 }}>
+      <CardContent
+        sx={theme => ({
+          p: `${theme.spacing(7, 4, 6)} !important`,
+          [theme.breakpoints.up('sm')]: {
+            p: `${theme.spacing(12, 9, 7)} !important`
+          }
+        })}
+      >
         <Box sx={{ mb: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                <Box sx={{  display: 'flex', alignItems: 'left', marginLeft:-5}}>
-                  <ImgStyled src='/images/monlogo.jpg' />
+                  <ImgStyled src='/images/monlogo.png' />
                 </Box>
 
         </Box>
@@ -230,22 +234,27 @@ const LoginPage = () => {
   )
 }
 
-export const getServerSideProps=async(context:any)=>{
+export const getServerSideProps = async (context: any) => {
   const { req } = context;
-  const { dispatch } = store;
 
   const session = await getSession({ req });
-  if (session) {
-  dispatch(SessionAction(session));
 
-return {
-      redirect: { destination: "/" },
+  // Only redirect an already-authenticated user away from /login.
+  // (No dispatch to the redux `store` here: that store is a single
+  // instance shared by the whole Node server process, so writing a
+  // per-request session into it would leak between concurrent users.)
+  if (session?.user) {
+    return {
+      redirect: {
+        destination: '/',
+        permanent: false,
+      },
     };
   }
 
   return {
     props: {
-      providers: await getProviders(),
+      providers: (await getProviders()) ?? [],
     },
   };
 }

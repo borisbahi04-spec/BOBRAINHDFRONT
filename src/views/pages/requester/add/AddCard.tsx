@@ -12,10 +12,12 @@ import toast from 'react-hot-toast'
 
 import {
   Autocomplete,
+  Avatar,
   Box,
   Button,
   Card,
   CardContent,
+  CardHeader,
   CircularProgress,
   Divider,
   FormControl,
@@ -29,6 +31,7 @@ import { AppDispatch } from 'src/redux/store'
 import { showErrors } from 'src/helpers'
 import { AbilityContext } from 'src/layouts/components/acl/Can'
 import { EntityAbility, UserAction } from 'src/configs/Action'
+import Icon from 'src/@core/components/icon'
 import {
   createrequesterAction,
   deleterequesterAction,
@@ -241,10 +244,20 @@ const AddCard = ({ data, requesttypes = [], stations = [] }: AddCardProps) => {
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <Card>
+        <CardHeader
+          title={data ? 'Modifier la demande' : 'Nouvelle demande'}
+          subheader={data ? `Référence : ${data.ticket ?? '-'}` : 'Renseignez les informations de la demande'}
+          avatar={
+            <Avatar sx={{ bgcolor: 'primary.main' }}>
+              <Icon icon={data ? 'mdi:pencil-outline' : 'mdi:plus-circle-outline'} />
+            </Avatar>
+          }
+        />
+        <Divider />
         <CardContent>
-          <Grid container spacing={2}>
+          <Grid container spacing={4}>
             {/* Ticket */}
-            <Grid item xs={12} md={12}>
+            <Grid item xs={12} md={6}>
               <FormControl fullWidth error={!!errors.ticket}>
                 <Controller
                   name="ticket"
@@ -259,8 +272,25 @@ const AddCard = ({ data, requesttypes = [], stations = [] }: AddCardProps) => {
               </FormControl>
             </Grid>
 
+             {/* Priority */}
+            <Grid item xs={12} md={6}>
+              <Controller
+                name="priority"
+                control={control}
+                render={({ field }) => (
+                  <TextField {...field} select label="Priorité *" fullWidth>
+                    {PriorityOptions.map(p => (
+                      <MenuItem key={p.key} value={p.key} sx={{ color: p.color, fontWeight: 'bold' }}>
+                        {p.label}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                )}
+              />
+            </Grid>
+
             {/* Title */}
-            <Grid item xs={12} md={12}>
+            <Grid item xs={12}>
               <FormControl fullWidth error={!!errors.title}>
                 <Controller
                   name="title"
@@ -350,22 +380,6 @@ const AddCard = ({ data, requesttypes = [], stations = [] }: AddCardProps) => {
                     error={!!fieldState.error}
                     helperText={fieldState.error?.message}
                   />
-                )}
-              />
-            </Grid>
-             {/* Priority */}
-            <Grid item xs={12} md={12}>
-              <Controller
-                name="priority"
-                control={control}
-                render={({ field }) => (
-                  <TextField {...field} select label="Priorité *" fullWidth>
-                    {PriorityOptions.map(p => (
-                      <MenuItem key={p.key} value={p.key} sx={{ color: p.color, fontWeight: 'bold' }}>
-                        {p.label}
-                      </MenuItem>
-                    ))}
-                  </TextField>
                 )}
               />
             </Grid>

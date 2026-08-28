@@ -94,53 +94,53 @@ const onClosed = (requester: Request, setLoading?: (loading: boolean) => void) =
       ))
    }
 const onTreated = (requester: Request, setLoading?: (loading: boolean) => void) => {
-      setLoading(true) // fin du loader
+      setLoading?.(true) // fin du loader
       dispatch(postStatusrequesterAction(requester.id, enumStatus.Treated,
         (res:any) => {
           // Success
           console.log('Request treated successfully')
           dispatch(getByIdrequestersAction(requester.id));
-          setLoading(false) // fin du loader
+          setLoading?.(false) // fin du loader
         },
         (err:any) => {
           // Error
           console.error('Error treating request:', err)
-          setLoading(false) // fin du loader
+          setLoading?.(false) // fin du loader
         }
       ))
    }
 
 const onRejected = (requester: Request, setLoading?: (loading: boolean) => void) => {
-      setLoading(true) // fin du loader
+      setLoading?.(true) // fin du loader
       dispatch(postStatusrequesterAction(requester.id, enumStatus.Rejected,
         (res:any) => {
           // Success
           console.log('Request rejected successfully')
           dispatch(getByIdrequestersAction(requester.id));
-          setLoading(false) // fin du loader
+          setLoading?.(false) // fin du loader
         },
         (err:any) => {
           // Error
           console.error('Error rejecting request:', err)
-          setLoading(false) // fin du loader
+          setLoading?.(false) // fin du loader
         }
       ))
    }
 
 
 const onCancelled = (requester: Request, setLoading?: (loading: boolean) => void) => {
-      setLoading(true) // fin du loader
+      setLoading?.(true) // fin du loader
       dispatch(postStatusrequesterAction(requester.id, enumStatus.Cancelled,
         (res:any) => {
           // Success
           console.log('Request annullé successfully')
           dispatch(getByIdrequestersAction(requester.id));
-          setLoading(false) // fin du loader
+          setLoading?.(false) // fin du loader
         },
         (err:any) => {
           // Error
           console.error('Error treating request:', err)
-          setLoading(false) // fin du loader
+          setLoading?.(false) // fin du loader
         }
       ))
    }

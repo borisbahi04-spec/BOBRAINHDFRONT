@@ -66,7 +66,7 @@ const PreviewCard = (props: Props) => {
             <Grid item sm={6} xs={12} sx={{ mb: { sm: 0, xs: 4 } }}>
               <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                  <Box sx={{  display: 'flex', alignItems: 'left', marginLeft:-5}}>
-                  <ImgStyled src='/images/monlogo.jpg' />
+                  <ImgStyled src='/images/monlogo.png' />
                 </Box>
                 <Box>
                   <Typography variant='h6' sx={{ mb: 1 }}>

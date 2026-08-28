@@ -36,7 +36,7 @@ import TableHeader from 'src/views/pages/requester/list/TableHeader'
 import ExpiredSessionDialog from 'src/views/pages/confirmDialog/ExpiredSessionDialog'
 import { EntityAbility, UserAction } from 'src/configs/Action'
 import { useSettings } from 'src/@core/hooks/useSettings'
-import { Autocomplete, CardContent, CardHeader, Chip,FormControl,InputLabel,MenuItem,Select,SelectChangeEvent,TextField,Tooltip, useMediaQuery, useTheme} from '@mui/material'
+import { Autocomplete, Avatar, CardContent, CardHeader, Chip, Collapse, Divider,FormControl,InputLabel,MenuItem,Select,SelectChangeEvent,TextField,Tooltip, useMediaQuery, useTheme} from '@mui/material'
 import Link from 'next/link'
 import IconButton from '@mui/material/IconButton'
 import Icon from 'src/@core/components/icon'
@@ -117,6 +117,7 @@ const useRequesterColumns = (ability: any): GridColDef[] => {
               label={status}
               size={isMobile ? 'small' : 'medium'}
               color={statusColorMap[status] ?? 'default'}
+              variant='outlined'
               sx={{ fontWeight: 600 }}
             />
           )
@@ -173,6 +174,7 @@ const useRequesterColumns = (ability: any): GridColDef[] => {
               label={priority}
               size={isMobile ? 'small' : 'medium'}
               color={priorityColorMap[priority]}
+              variant='outlined'
               sx={{ fontWeight: 600 }}
             />
           )
@@ -233,6 +235,7 @@ const List = ({ resdata, requesttypeData,stationData,userData }: any) => {
   const [startDateRange, setStartDateRange] = useState<DateType>(null)
   const [dates, setDates] = useState<Date[]>([])
   const [search, setSearch] = useState('')
+  const [showFilters, setShowFilters] = useState(false)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(25)
   const columns = useRequesterColumns(ability)
@@ -362,8 +365,25 @@ const List = ({ resdata, requesttypeData,stationData,userData }: any) => {
                 <DatePickerWrapper>
                   <Grid container spacing={2}>
                     <Grid item xs={12}>
-                      <Card>
-                        <CardHeader title='Filtres'/>
+                      <Card elevation={3}>
+                        <CardHeader
+                          title='Filtres'
+                          subheader='Affinez la liste des demandes'
+                          avatar={
+                            <Avatar sx={{ bgcolor: 'primary.main' }}>
+                              <Icon icon='mdi:filter-variant' />
+                            </Avatar>
+                          }
+                          action={
+                            <Tooltip title={showFilters ? 'Masquer les filtres' : 'Afficher les filtres'}>
+                              <IconButton onClick={() => setShowFilters(prev => !prev)}>
+                                <Icon icon={showFilters ? 'mdi:chevron-up' : 'mdi:chevron-down'} />
+                              </IconButton>
+                            </Tooltip>
+                          }
+                        />
+                        <Collapse in={showFilters}>
+                        <Divider />
                         <CardContent>
                           <Grid container spacing={6}>
                             <Grid item xs={12} sm={4}>
@@ -498,11 +518,22 @@ const List = ({ resdata, requesttypeData,stationData,userData }: any) => {
                             </Grid>
                           </Grid>
                         </CardContent>
+                        </Collapse>
                       </Card>
                     </Grid>
                         <Grid item xs={12} md={12} lg={12}>
 
-                         <Card>
+                         <Card elevation={3}>
+                        <CardHeader
+                          title='Liste des demandes'
+                          subheader={`${store?.total ?? 0} demande(s) au total`}
+                          avatar={
+                            <Avatar sx={{ bgcolor: 'primary.main' }}>
+                              <Icon icon='mdi:format-list-bulleted' />
+                            </Avatar>
+                          }
+                        />
+                        <Divider />
                         <TableHeader
                           value={search}
                           handleFilter={handleFilter}
@@ -515,10 +546,15 @@ const List = ({ resdata, requesttypeData,stationData,userData }: any) => {
                             rows={store?.data || []}
                             columns={columns}
                             disableColumnMenu={isMobile}
+                            disableSelectionOnClick
                             columnBuffer={3}
                             sx={{
+                              border: 0,
                               '& .MuiDataGrid-columnHeaders': {
                                 backgroundColor: theme.palette.background.default
+                              },
+                              '& .MuiDataGrid-row:hover': {
+                                backgroundColor: theme.palette.action.hover
                               }
                             }}
                             page={store.current_page - 1}

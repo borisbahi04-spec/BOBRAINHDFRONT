@@ -130,7 +130,7 @@ let sStat:any={startdate:'',endDate:''};
 // ======================================================
 // DASHBOARD PRINCIPAL
 // ======================================================
-const InterventionDashboard = (props: any) => {
+const Home = (props: any) => {
 const [startDate, setStartDate] = useState('')
 const [endDate, setEndDate] = useState('')
 const { settings, saveSettings } = useSettings()
@@ -219,7 +219,7 @@ const [dates, setDates] = useState<Date[]>([])
                 </Card>
               </Grid>
 
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} sm={6} md={4}>
                 <StatCard
                   title="Demandes"
                   value={store?.globalStats?.totalRequests || 0}
@@ -228,7 +228,7 @@ const [dates, setDates] = useState<Date[]>([])
                 />
               </Grid>
 
-              <Grid item xs={12} md={4}>
+              <Grid item xs={12} sm={6} md={4}>
                 <StatCard
                   title="Émetteurs"
                   value={store?.globalStats?.uniqueEmitters || 0}
@@ -237,7 +237,7 @@ const [dates, setDates] = useState<Date[]>([])
                 />
               </Grid>
 
-              <Grid item xs={12} md={4}>
+              <Grid item xs={12} sm={6} md={4}>
                 <StatCard
                   title="Centres"
                   value={store?.globalStats?.uniqueTypes || 0}
@@ -247,7 +247,7 @@ const [dates, setDates] = useState<Date[]>([])
               </Grid>
 
               {/* KPI */}
-              <Grid item xs={12} md={2}>
+              <Grid item xs={6} sm={4} md={2}>
                 <StatCard
                   title="Ouvertes"
                   value={store?.globalStats?.openRequests || 0}
@@ -256,7 +256,7 @@ const [dates, setDates] = useState<Date[]>([])
                 />
               </Grid>
 
-              <Grid item xs={12} md={2}>
+              <Grid item xs={6} sm={4} md={2}>
                 <StatCard
                   title="Approuvées"
                   value={store?.globalStats?.approvedRequests || 0}
@@ -265,7 +265,7 @@ const [dates, setDates] = useState<Date[]>([])
                 />
               </Grid>
 
-              <Grid item xs={12} md={2}>
+              <Grid item xs={6} sm={4} md={2}>
                 <StatCard
                   title="Rejetées"
                   value={store?.globalStats?.rejectedRequests || 0}
@@ -274,7 +274,7 @@ const [dates, setDates] = useState<Date[]>([])
                 />
               </Grid>
 
-              <Grid item xs={12} md={2}>
+              <Grid item xs={6} sm={4} md={2}>
                 <StatCard
                   title="Annulées"
                   value={store?.globalStats?.cancelledRequests || 0}
@@ -283,7 +283,7 @@ const [dates, setDates] = useState<Date[]>([])
                 />
               </Grid>
 
-              <Grid item xs={12} md={2}>
+              <Grid item xs={6} sm={4} md={2}>
                 <StatCard
                   title="Fermées"
                   value={store?.globalStats?.closedRequests || 0}
@@ -292,7 +292,7 @@ const [dates, setDates] = useState<Date[]>([])
                 />
               </Grid>
 
-              <Grid item xs={12} md={2}>
+              <Grid item xs={6} sm={4} md={2}>
                 <StatCard
                   title="Traitées"
                   value={store?.globalStats?.treatedRequests || 0}
@@ -398,18 +398,19 @@ const [dates, setDates] = useState<Date[]>([])
       }
 }
 
-InterventionDashboard.acl = {
+Home.acl = {
   action:UserAction.Read,
   subject:EntityAbility.BRANCH
 }
 
-InterventionDashboard.authGuard = true
+Home.authGuard = true
 
 
 export async function getServerSideProps(context: { req: any }) {
 
   const { req } = context;
   const session = await getSession({ req });
+
   if(!session){
     return {
       redirect: {
@@ -456,4 +457,4 @@ return {
 
 
 
-export default InterventionDashboard
+export default Home

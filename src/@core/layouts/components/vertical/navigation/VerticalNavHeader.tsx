@@ -99,7 +99,7 @@ const VerticalNavHeader = (props: Props) => {
       ) : (
           <StyledLink href='/'>
               <Box sx={{  display: 'flex', alignItems: 'left', marginLeft:-5}}>
-                <ImgStyled src='/images/monlogo.jpg' />
+                <ImgStyled src='/images/monlogo.png' />
               </Box>
 
           </StyledLink>

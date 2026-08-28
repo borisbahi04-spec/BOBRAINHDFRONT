@@ -28,7 +28,7 @@ const {data,requesttypes,stations}=props
 
     if (data) {
       return (
-          <Grid container spacing={2} direction="column" width='45%'>
+          <Grid container spacing={2} direction="column" width='80%'>
             <Grid item xl={12} md={12} xs={12}>
               <AddCard data={data} requesttypes={requesttypes} stations={stations} />
               </Grid>

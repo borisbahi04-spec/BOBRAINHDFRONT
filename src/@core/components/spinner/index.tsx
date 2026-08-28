@@ -20,7 +20,7 @@ const FallbackSpinner = ({ sx }: { sx?: BoxProps['sx'] }) => {
       }}
     >
       <Box sx={{  display: 'flex', alignItems: 'left', marginLeft:-5}}>
-      <ImgStyled src='/images/monlogo.jpg' />
+      <ImgStyled src='/images/monlogo.png' />
     </Box>
 
       <CircularProgress disableShrink sx={{ mt: 6 }} />

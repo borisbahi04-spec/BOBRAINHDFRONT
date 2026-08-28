@@ -107,6 +107,7 @@
     "@iconify/types": "2.0.0",
     "@iconify/utils": "2.0.1",
     "@types/cleave.js": "1.4.7",
+    "@types/crypto-js": "^4.2.2",
     "@types/draft-js": "0.11.9",
     "@types/jsonwebtoken": "8.5.9",
     "@types/node": "18.11.8",

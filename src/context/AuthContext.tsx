@@ -73,18 +73,7 @@ const AuthProvider = ({ children }: Props) => {
   }, [])*/
 
   const handleLogin = (params: LoginParams, errorCallback?: ErrCallbackType) => {
-   /* axios
-      .post(authConfig.loginEndpoint, params)
-      .then(async response => {
-        window.localStorage.setItem(authConfig.storageTokenKeyName, response.data.accessToken)
-        const returnUrl = router.query.returnUrl
-        setUser({ ...response.data.userData })
-        window.localStorage.setItem('userData', JSON.stringify(response.data.userData))
-        const redirectURL = returnUrl && returnUrl !== '/' ? returnUrl : '/home'
-
-        router.replace(redirectURL as string)
-      })*/
-      signIn("credentials", { callbackUrl: "/flash/list" })      .catch(err => {
+      signIn("credentials", { callbackUrl: "/branch/list" })      .catch(err => {
         if (errorCallback) errorCallback(err)
       })
   }
