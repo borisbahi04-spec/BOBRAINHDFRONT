@@ -55,6 +55,13 @@ const navigation = (): VerticalNavItemsType => {
           subject:EntityAbility.STATION,
         },
         {
+          title: PAGE_SETTINGS.labAgents.title,
+          path: '/labagent/list',
+          icon: PAGE_SETTINGS.labAgents.icon,
+          action: UserAction.Read,
+          subject: EntityAbility.STATION,
+        },
+        {
           title: PAGE_SETTINGS.requestTypes.title,
           path:'/requesttype/list',
           icon: PAGE_SETTINGS.requestTypes.icon,

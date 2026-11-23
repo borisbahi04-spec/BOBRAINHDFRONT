@@ -1,45 +1,22 @@
 // ** Demo Components Imports
 import { useEffect } from 'react';
 import { getSession } from 'next-auth/react';
-import { useDispatch, useSelector } from 'react-redux';
 import { useSettings } from 'src/@core/hooks/useSettings';
 import { EntityAbility, UserAction } from 'src/configs/Action';
-import { RootState } from 'src/redux/store';
 import ExpiredSessionDialog from 'src/views/pages/confirmDialog/ExpiredSessionDialog';
 import EditView from 'src/views/pages/requester/edit/Edit'
-import { getrequesttypes } from 'src/redux/reducers/requesttype/requesttype-reducer';
-import { getstations } from 'src/redux/reducers/station/station-reducer';
 // ** Styled Component
 
-const RequesterEdit = (props:any) => {
-  const requesttypeStore = useSelector((state: RootState) => state.requesttype.data)
-  const stationStore = useSelector((state: RootState) => state.station.data)
-  const {data,requesttypeData,stationData}=props;
+const RequesterEdit = (props: any) => {
+  const { data } = props
   const { settings, saveSettings } = useSettings()
-  const dispatch=useDispatch()
 
+  useEffect(() => {
+    saveSettings({ ...settings, iconPage: 'mdi:file-document-edit-outline', titlePage: 'MODIFICATION DEMANDE INTERVENTION' })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
-   useEffect(()=>{
-    saveSettings({ ...settings,
-      iconPage:``,
-      titlePage:`MODIFICATION DEMANDE INTERVENTION`
-     })
-  },[])
-
-
-  useEffect(()=>{
-       dispatch(getrequesttypes(requesttypeData));
-       dispatch(getstations(stationData));
-     },[dispatch])
-
-
-
-  return (
-      data?
-        <EditView data={data} requesttypes={requesttypeStore?.data} stations={stationStore?.data} />
-      :
-       <ExpiredSessionDialog/>
-  )
+  return data?.id ? <EditView data={data} /> : <ExpiredSessionDialog />
 }
 
 RequesterEdit.acl = {
@@ -49,12 +26,12 @@ RequesterEdit.acl = {
 
 RequesterEdit.authGuard = true
 
-export async function getServerSideProps(context: {req?: any; }) {
+export async function getServerSideProps(context: any) {
   const { req} = context;
   const { id } = context.query;
 
 
- const session = await getSession({ req });
+ const session: any = await getSession({ req });
   try{
   const {token}=session?.user;
 

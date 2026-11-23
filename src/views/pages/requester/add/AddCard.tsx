@@ -1,426 +1,454 @@
-// AddCard.tsx — version refactorisée, lisible et professionnelle
-
-import { useContext, useEffect, useState } from 'react'
+// Formulaire « Demande d'intervention » — Tailwind, charte DKL, FR/EN
+import { ReactNode, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/router'
-import { useDispatch } from 'react-redux'
-
-import * as yup from 'yup'
+import { useDispatch, useSelector } from 'react-redux'
+import { Controller, SubmitHandler, useForm, useWatch } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
-import { useForm, Controller, SubmitHandler} from 'react-hook-form'
-
 import toast from 'react-hot-toast'
 
-import {
-  Autocomplete,
-  Avatar,
-  Box,
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CircularProgress,
-  Divider,
-  FormControl,
-  FormHelperText,
-  Grid,
-  MenuItem,
-  TextField
-} from '@mui/material'
-
-import { AppDispatch } from 'src/redux/store'
-import { showErrors } from 'src/helpers'
+import Icon from 'src/@core/components/icon'
+import { AppDispatch, RootState } from 'src/redux/store'
 import { AbilityContext } from 'src/layouts/components/acl/Can'
 import { EntityAbility, UserAction } from 'src/configs/Action'
-import Icon from 'src/@core/components/icon'
+import { enumStatus, PriorityEnum } from 'src/definitions/enum'
 import {
   createrequesterAction,
   deleterequesterAction,
-  requestersAction,
   updaterequesterAction
 } from 'src/redux/actions/requester/requester-actions'
-import { enumStatus, PriorityEnum, PriorityOptions } from 'src/definitions/enum'
-import { getSearchrequesttypesAction } from 'src/redux/actions/requesttype/requesttype-actions'
-import { getSearchstationsAction } from 'src/redux/actions/station/station-actions'
+import { useHd } from 'src/i18n/helpdesk'
+import { extractApiError } from 'src/helpers/apiError'
+import { Button, ConfirmDialog, Field, Option, PageHeader, SearchSelect, cn } from 'src/components/hd'
 
-/* -------------------------------------------------------------------------- */
-/*                                    TYPES                                   */
+import { buildRequesterSchema, normalizeTickets, TEXT_MAX } from '../shared/schema'
+import { requesterListHref } from '../shared/listReturn'
+import {
+  loadLabAgents,
+  loadOperators,
+  loadRequestTypes,
+  loadStations,
+  toLabAgentOption,
+  toOperatorOption,
+  toRequestTypeOption,
+  toStationOption
+} from '../shared/options'
+
 /* -------------------------------------------------------------------------- */
 
 interface AddCardProps {
-  data?: {
-    id: string
-    ticket?: string
-    title: string
-    priority: PriorityEnum
-    description?: string
-    requesttype?: { id: string }
-    station?: { id: string }
-  }
-  requesttypes?: any[]
-  stations?: any[]
+  data?: any
+  [key: string]: any
 }
 
 interface FormValues {
-  id?: string
-  ticket?: string
-  title: string
+  ticket: string
   priority: PriorityEnum
-  description?: string
-  requesttypeId?: string
-  stationId?: string
+  station: Option | null
+  requesttype: Option | null
+  labAgent: Option | null
+  operator: Option | null
+  description: string
+  correction: string
 }
 
-/* -------------------------------------------------------------------------- */
-/*                                   SCHEMA                                   */
-/* -------------------------------------------------------------------------- */
+const PRIORITY_UI: Record<PriorityEnum, { dot: string; active: string }> = {
+  [PriorityEnum.Normal]: { dot: 'bg-gray-400', active: 'border-gray-500 bg-gray-50 text-gray-900' },
+  [PriorityEnum.Important]: { dot: 'bg-harvest-500', active: 'border-harvest-500 bg-harvest-50 text-harvest-700' },
+  [PriorityEnum.Urgent]: { dot: 'bg-red-500', active: 'border-red-500 bg-red-50 text-red-700' }
+}
 
-const schema: yup.Schema<FormValues> = yup.object({
-  title: yup
-    .string()
-    .min(3, obj => showErrors('Titre de la demande', obj.value.length, obj.min))
-    .required('Titre de la demande obligatoire'),
-
-  ticket: yup
-  .string()
-  .required('Ticket obligatoire')
-  .matches(
-    /^([A-Z]{2}-\d{4,12})(\s*,\s*[A-Z]{2}-\d{4,12})*$/,
-    'Format invalide : ex AY-0001 ou AY-0001, AZ-1234'
-  ),
-
-  priority: yup
-    .mixed<PriorityEnum>()
-    .oneOf(Object.values(PriorityEnum))
-    .required('La priorité est obligatoire'),
-
-  description: yup
-    .string()
-    .required('La description de la demande doit être renseignée'),
-  stationId: yup
-    .string()
-    .required('La station est obligatoire'),
-  requesttypeId: yup
-    .string()
-    .required('Le type de requête est obligatoire')
-})
+const Section = ({ icon, title, help, children }: { icon: string; title: string; help: string; children: ReactNode }) => (
+  <section className='grid gap-6 border-0 border-b border-solid border-gray-100 px-6 py-6 last:border-b-0 lg:grid-cols-[240px_1fr]'>
+    <div>
+      <div className='flex items-center gap-2'>
+        <span className='flex h-7 w-7 items-center justify-center rounded-full bg-harvest-500 text-white'>
+          <Icon icon={icon} fontSize={16} />
+        </span>
+        <h2 className='m-0 text-sm font-bold uppercase tracking-wide text-brand-700'>{title}</h2>
+      </div>
+      <p className='m-0 mt-2 text-sm text-gray-500'>{help}</p>
+    </div>
+    <div className='grid min-w-0 gap-x-5 gap-y-1 md:grid-cols-2'>{children}</div>
+  </section>
+)
 
 /* -------------------------------------------------------------------------- */
-/*                                 COMPONENT                                  */
-/* -------------------------------------------------------------------------- */
 
-const AddCard = ({ data, requesttypes = [], stations = [] }: AddCardProps) => {
+const AddCard = ({ data }: AddCardProps) => {
   const router = useRouter()
   const dispatch = useDispatch<AppDispatch>()
   const ability = useContext(AbilityContext)
-  const [loading, setLoading] = useState(false)
+  const { t, lang } = useHd()
+  const session = useSelector((state: RootState) => state.auth?.getuserprofile?.session)
 
-  const pgquery = { page: 1, per_page: 25 }
+  const isEdit = !!data?.id
+  const readOnly = isEdit && data?.status && data.status !== enumStatus.Open
+  const canSave = ability.can(isEdit ? UserAction.Edit : UserAction.Create, EntityAbility.REQUESTER) && !readOnly
+  const canDelete = isEdit && ability.can(UserAction.Delete, EntityAbility.REQUESTER) && !readOnly
+
+  const [submitting, setSubmitting] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const leaving = useRef(false) // navigation volontaire après enregistrement
+
+  // Opératrice par défaut = utilisatrice connectée si son rôle est « opérateur »
+  const selfOperator: Option | null = useMemo(() => {
+    if (!session?.role?.isForOperator || !session?.userId) return null
+    const u = session.userData ?? {}
+    return toOperatorOption({ id: session.userId, firstName: u.firstName, lastName: u.lastName, username: session.username })
+  }, [session])
+
+  // le schéma est reconstruit quand la langue change (messages traduits)
+  const schema = useMemo(() => buildRequesterSchema(t), [t, lang]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const defaultValues: FormValues = useMemo(
+    () => ({
+      ticket: data?.ticket ?? '',
+      priority: (data?.priority as PriorityEnum) ?? PriorityEnum.Normal,
+      station: toStationOption(data?.station),
+      requesttype: toRequestTypeOption(data?.requesttype),
+      labAgent: toLabAgentOption(data?.labAgent),
+      operator: toOperatorOption(data?.operator) ?? (isEdit ? null : selfOperator),
+      description: data?.description ?? '',
+      correction: data?.correction ?? ''
+    }),
+    [data, isEdit, selfOperator]
+  )
 
   const {
     control,
+    register,
     handleSubmit,
     reset,
     setValue,
-    formState: { errors }
+    formState: { errors, isDirty, isSubmitSuccessful }
   } = useForm<FormValues>({
-    mode: 'onBlur',
+    mode: 'onTouched',
     resolver: yupResolver(schema),
-    defaultValues: {
-      title: '',
-      ticket: '',
-      description: '',
-      priority: PriorityEnum.Normal,
-      requesttypeId: '',
-      stationId: ''
-    }
+    defaultValues
   })
 
-  /* ------------------------------ INIT EDIT ------------------------------ */
-
   useEffect(() => {
-    if (!data) return
+    reset(defaultValues)
+  }, [defaultValues, reset])
 
-    setValue('id', data.id)
-    setValue('title', data.title)
-    setValue('ticket', data.ticket ?? '')
-    setValue('description', data.description ?? '')
-    setValue('priority', data.priority ?? PriorityEnum.Normal)
-    setValue('requesttypeId', data.requesttype?.id ?? '')
-    setValue('stationId', data.station?.id ?? '')
-  }, [data, setValue])
+  const [description, correction, priority] = useWatch({ control, name: ['description', 'correction', 'priority'] })
 
-  /* ------------------------------ HELPERS ------------------------------ */
-
-  const resetAll = () => {
-    reset()
-    router.push('/requester/list')
-  }
-
-  const requesterErrMess = (errs: any) => Object.values(errs || {}).join(' ')
+  // Avertissement si l'utilisateur quitte avec des modifications non enregistrées
+  useEffect(() => {
+    if (!isDirty || isSubmitSuccessful) return
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    const onRoute = () => {
+      if (leaving.current) return
+      if (!window.confirm(t('form.unsavedChanges'))) {
+        router.events.emit('routeChangeError')
+        // eslint-disable-next-line no-throw-literal
+        throw 'Navigation annulée'
+      }
+    }
+    window.addEventListener('beforeunload', onBeforeUnload)
+    router.events.on('routeChangeStart', onRoute)
+    return () => {
+      window.removeEventListener('beforeunload', onBeforeUnload)
+      router.events.off('routeChangeStart', onRoute)
+    }
+  }, [isDirty, isSubmitSuccessful, router, t])
 
   /* ------------------------------ ACTIONS ------------------------------ */
 
-  /*const onSubmit = (formData: FormValues) => {
-    if (data?.id) {
-      dispatch(
-        updaterequesterAction(
-          data.id,
-          formData,
-          () => {
-            dispatch(requestersAction())
-            resetAll()
-          },
-          (res: any) => toast.error(requesterErrMess(res.errors))
-        )
-      )
-      return
+  const goList = () => router.push(requesterListHref())
+
+  const onSubmit: SubmitHandler<FormValues> = values => {
+    const payload = {
+      ticket: normalizeTickets(values.ticket),
+      priority: values.priority,
+      stationId: values.station?.id,
+      requesttypeId: values.requesttype?.id,
+      labAgentId: values.labAgent?.id ?? null, // facultatif
+      operatorId: values.operator?.id ?? null, // facultatif
+      description: values.description.trim(),
+      correction: values.correction.trim()
+    }
+    setSubmitting(true)
+
+    const onError = (res: any) => {
+      setSubmitting(false)
+      toast.error(extractApiError(res, t('common.unexpectedError')))
     }
 
-    dispatch(
-      createrequesterAction(
-        formData,
-        resetAll,
-        (res: any) => toast.error(requesterErrMess(res.errors))
-      )
-    )
-  }*/
-
- const onSubmit: SubmitHandler<FormValues> = (formData) => {
-    setLoading(true)
-
-    if (data?.id) {
-      // Update
+    if (isEdit) {
       dispatch(
         updaterequesterAction(
           data.id,
-          formData,
-          () => {
-            dispatch(requestersAction())
-            resetAll()
-            setLoading(false)
-          },
+          payload,
           (res: any) => {
-            toast.error(requesterErrMess(res.errors))
-            setLoading(false)
-          }
+            setSubmitting(false)
+            reset(values)
+            toast.success(t('form.updated', { ref: res?.reference ?? data.reference }))
+            leaving.current = true
+            router.push(`/requester/preview/${data.id}`)
+          },
+          onError
         )
       )
-      return
-    }
-
-    // Create
-    dispatch(
-      createrequesterAction(
-        formData,
-        () => {
-          resetAll()
-          setLoading(false)
-        },
-        (res: any) => {
-          toast.error(requesterErrMess(res.errors))
-          setLoading(false)
-        }
+    } else {
+      dispatch(
+        createrequesterAction(
+          payload,
+          (res: any) => {
+            setSubmitting(false)
+            reset(values)
+            toast.success(t('form.created', { ref: res?.reference ?? '' }))
+            leaving.current = true
+            router.push(res?.id ? `/requester/preview/${res.id}` : '/requester/list')
+          },
+          onError
+        )
       )
-    )
+    }
   }
-  const handleDelete = () => {
-    if (!data) return
 
+  const handleDelete = () => {
+    setDeleting(true)
     dispatch(
       deleterequesterAction(
         data.id,
         () => {
-          dispatch(requestersAction())
-          toast.success(`Suppression '${data.title}' réussie`)
-          resetAll()
+          setDeleting(false)
+          setConfirmDelete(false)
+          reset(defaultValues)
+          toast.success(t('form.deleted', { ref: data.reference }))
+          leaving.current = true
+          goList()
         },
-        (res: any) => toast.error(res.message)
+        (res: any) => {
+          setDeleting(false)
+          toast.error(extractApiError(res, t('common.unexpectedError')))
+        }
       )
     )
   }
 
   /* -------------------------------------------------------------------------- */
 
-  return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      <Card>
-        <CardHeader
-          title={data ? 'Modifier la demande' : 'Nouvelle demande'}
-          subheader={data ? `Référence : ${data.ticket ?? '-'}` : 'Renseignez les informations de la demande'}
-          avatar={
-            <Avatar sx={{ bgcolor: 'primary.main' }}>
-              <Icon icon={data ? 'mdi:pencil-outline' : 'mdi:plus-circle-outline'} />
-            </Avatar>
-          }
-        />
-        <Divider />
-        <CardContent>
-          <Grid container spacing={4}>
-            {/* Ticket */}
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth error={!!errors.ticket}>
-                <Controller
-                  name="ticket"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField {...field} label="Ticket *"
-                      placeholder="Example : AY-0001, EB-00001, ..."
-                    />
-                  )}
-                />
-                <FormHelperText>{errors.ticket?.message}</FormHelperText>
-              </FormControl>
-            </Grid>
+  const err = (name: keyof FormValues) => (errors[name] as any)?.message as string | undefined
 
-             {/* Priority */}
-            <Grid item xs={12} md={6}>
+  return (
+    <div className='mx-auto w-full max-w-6xl font-sans'>
+      <PageHeader
+        icon={isEdit ? 'mdi:file-document-edit-outline' : 'mdi:file-document-plus-outline'}
+        title={isEdit ? t('form.editTitle') : t('form.newTitle')}
+        subtitle={isEdit ? t('form.editSubtitle', { ref: data.reference ?? '—' }) : t('form.newSubtitle')}
+      />
+
+      {readOnly && (
+        <div className='mb-4 flex items-center gap-2 rounded-lg border border-solid border-harvest-100 bg-harvest-50 px-4 py-3 text-sm text-harvest-700'>
+          <Icon icon='mdi:lock-outline' fontSize={18} />
+          {t('form.readonlyNotice', { status: t(`status.${data.status}`) })}
+        </div>
+      )}
+
+      <form noValidate onSubmit={handleSubmit(onSubmit)} className='hd-card overflow-visible'>
+        <fieldset disabled={!canSave || submitting} className='m-0 min-w-0 border-0 p-0'>
+          {/* 1. Identification */}
+          <Section icon='mdi:ticket-confirmation-outline' title={t('form.sectionTicket')} help={t('form.sectionTicketHelp')}>
+            <Field id='ticket' label={t('form.ticket')} required error={err('ticket')} help={t('form.ticketHelp')}>
+              <input
+                id='ticket'
+                autoFocus={!isEdit}
+                className={cn('hd-input font-mono uppercase tracking-wide placeholder:font-sans placeholder:normal-case placeholder:tracking-normal', errors.ticket && 'hd-input-error')}
+                placeholder={t('form.ticketPlaceholder')}
+                aria-invalid={!!errors.ticket}
+                aria-describedby={errors.ticket ? 'ticket-error' : 'ticket-help'}
+                {...register('ticket', {
+                  onBlur: e => setValue('ticket', normalizeTickets(e.target.value), { shouldValidate: true })
+                })}
+              />
+            </Field>
+
+            <Field id='priority' label={t('form.priority')} required error={err('priority')}>
+              <div role='radiogroup' id='priority' className='grid grid-cols-3 gap-2'>
+                {Object.values(PriorityEnum).map(p => (
+                  <label
+                    key={p}
+                    className={cn(
+                      'flex h-[42px] cursor-pointer items-center justify-center gap-2 rounded-lg border border-solid text-sm font-semibold transition',
+                      priority === p ? PRIORITY_UI[p].active : 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50'
+                    )}
+                  >
+                    <input type='radio' value={p} className='sr-only' {...register('priority')} />
+                    <span className={cn('h-2 w-2 rounded-full', PRIORITY_UI[p].dot)} />
+                    {t(`priority.${p}`)}
+                  </label>
+                ))}
+              </div>
+            </Field>
+
+            <Field id='station' label={t('form.station')} required error={err('station')}>
               <Controller
-                name="priority"
+                name='station'
                 control={control}
                 render={({ field }) => (
-                  <TextField {...field} select label="Priorité *" fullWidth>
-                    {PriorityOptions.map(p => (
-                      <MenuItem key={p.key} value={p.key} sx={{ color: p.color, fontWeight: 'bold' }}>
-                        {p.label}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                )}
-              />
-            </Grid>
-
-            {/* Title */}
-            <Grid item xs={12}>
-              <FormControl fullWidth error={!!errors.title}>
-                <Controller
-                  name="title"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField {...field} label="Titre *"
-                     />
-                  )}
-                />
-                <FormHelperText>{errors.title?.message}</FormHelperText>
-              </FormControl>
-            </Grid>
-
-
-            {/* Station */}
-            <Grid item xs={12} md={5}>
-              <Controller
-                name="stationId"
-                control={control}
-                render={({ field, fieldState }) => {
-                  const selectedStation = stations?.find((r) => r.id === field.value) ?? null;
-
-                  return (
-                  <Autocomplete
-                    options={stations}
-                    value={selectedStation}
-                    isOptionEqualToValue={(o, v) => o.id === v.id}
-                    getOptionLabel={o => o?.displayName ?? ''}
-                    onChange={(_, v) => field.onChange(v?.id ?? '')}
-                    onInputChange={(_, v) => dispatch(getSearchstationsAction(v, pgquery))}
-                    renderInput={params => (
-                      <TextField
-                        {...params}
-                        label="Rechercher Station"
-                        error={!!fieldState.error}
-                        helperText={fieldState.error?.message}
-                      />
-                    )}
-                  />
-                  )
-                }
-              }
-              />
-            </Grid>
-
-            {/* Request Type */}
-            <Grid item xs={12} md={7}>
-              <Controller
-                name="requesttypeId"
-                control={control}
-                render={({ field, fieldState }) => {
-                  const selectedRequestType = requesttypes?.find((r) => r.id === field.value) ?? null;
-
-                  return <Autocomplete
-                      options={requesttypes}
-                      value={selectedRequestType}
-                      isOptionEqualToValue={(o, v) => o.id === v.id}
-                      getOptionLabel={o => o?.displayName ?? ''}
-                      onChange={(_, v) => field.onChange(v?.id ?? '')}
-                      onInputChange={(_, v) => dispatch(getSearchrequesttypesAction(v, pgquery))}
-                      renderInput={params => (
-                        <TextField
-                          {...params}
-                          label="Rechercher Type de Requête"
-                          error={!!fieldState.error}
-                          helperText={fieldState.error?.message}
-                        />
-                      )}
-                    />
-                }}
-
-              />
-            </Grid>
-
-            {/* Description */}
-            <Grid item xs={12}>
-              <Controller
-                name="description"
-                control={control}
-                render={({ field, fieldState }) => (
-                  <TextField
-                    {...field}
-                    label="Description *"
-                    multiline
-                    minRows={3}
-                    fullWidth
-                    error={!!fieldState.error}
-                    helperText={fieldState.error?.message}
+                  <SearchSelect
+                    id='station'
+                    icon='mdi:factory'
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    loadOptions={loadStations}
+                    placeholder={t('form.stationPlaceholder')}
+                    invalid={!!errors.station}
+                    disabled={!canSave}
                   />
                 )}
               />
-            </Grid>
-          </Grid>
-        </CardContent>
+            </Field>
 
-        <Divider />
-
-        <CardContent>
-          <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} md={4}>
-              {data && ability.can(UserAction.Delete, EntityAbility.REQUESTER) && (
-                <Button color="error" variant="outlined" onClick={handleDelete}>
-                  Supprimer
-                </Button>
-              )}
-            </Grid>
-
-            <Grid item xs={12} md={8}>
-              <Box display="flex" justifyContent="flex-end">
-                 <Button size='medium' variant='outlined' color='secondary' sx={{ mr: 2 }} onClick={resetAll} fullWidth>
-                      Annuler
-                </Button>
-                {ability.can(UserAction.Edit, EntityAbility.REQUESTER) && (
-                 <Button
-                    type="submit"
-                    size="medium"
-                    variant="contained"
-                    disabled={loading}
-                    startIcon={loading && <CircularProgress size={16} />}
-                  >
-                    {loading ? 'Enregistrement...' : 'Enregistrer'}
-                  </Button>
+            <Field id='requesttype' label={t('form.requestType')} required error={err('requesttype')}>
+              <Controller
+                name='requesttype'
+                control={control}
+                render={({ field }) => (
+                  <SearchSelect
+                    id='requesttype'
+                    icon='mdi:shape-outline'
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    loadOptions={loadRequestTypes}
+                    placeholder={t('form.requestTypePlaceholder')}
+                    invalid={!!errors.requesttype}
+                    disabled={!canSave}
+                  />
                 )}
-              </Box>
-            </Grid>
-          </Grid>
-        </CardContent>
-      </Card>
-    </form>
+              />
+            </Field>
+          </Section>
 
+          {/* 2. Personnes */}
+          <Section icon='mdi:account-group-outline' title={t('form.sectionPeople')} help={t('form.sectionPeopleHelp')}>
+            <Field id='labAgent' label={t('form.labAgent')} optionalLabel={t('common.optional')} error={err('labAgent')}>
+              <Controller
+                name='labAgent'
+                control={control}
+                render={({ field }) => (
+                  <SearchSelect
+                    id='labAgent'
+                    icon='mdi:flask-outline'
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    loadOptions={loadLabAgents}
+                    placeholder={t('form.labAgentPlaceholder')}
+                    invalid={!!errors.labAgent}
+                    disabled={!canSave}
+                  />
+                )}
+              />
+            </Field>
+
+            <Field id='operator' label={t('form.operator')} optionalLabel={t('common.optional')} error={err('operator')} help={t('form.operatorHelp')}>
+              <Controller
+                name='operator'
+                control={control}
+                render={({ field }) => (
+                  <SearchSelect
+                    id='operator'
+                    icon='mdi:account-tie-outline'
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    loadOptions={loadOperators}
+                    placeholder={t('form.operatorPlaceholder')}
+                    invalid={!!errors.operator}
+                    disabled={!canSave}
+                  />
+                )}
+              />
+            </Field>
+          </Section>
+
+          {/* 3. Problème & correction */}
+          <Section icon='mdi:clipboard-text-outline' title={t('form.sectionDetails')} help={t('form.sectionDetailsHelp')}>
+            <Field
+              id='description'
+              label={t('form.description')}
+              required
+              error={err('description')}
+              counter={t('form.chars', { count: description?.length ?? 0, max: TEXT_MAX })}
+              className='md:col-span-2'
+            >
+              <textarea
+                id='description'
+                rows={4}
+                maxLength={TEXT_MAX}
+                className={cn('hd-input resize-y leading-relaxed', errors.description && 'hd-input-error')}
+                placeholder={t('form.descriptionPlaceholder')}
+                aria-invalid={!!errors.description}
+                {...register('description')}
+              />
+            </Field>
+
+            <Field
+              id='correction'
+              label={t('form.correction')}
+              required
+              error={err('correction')}
+              counter={t('form.chars', { count: correction?.length ?? 0, max: TEXT_MAX })}
+              className='md:col-span-2'
+            >
+              <textarea
+                id='correction'
+                rows={4}
+                maxLength={TEXT_MAX}
+                className={cn(
+                  'hd-input resize-y border-l-4 border-l-leaf-500 leading-relaxed',
+                  errors.correction && 'hd-input-error'
+                )}
+                placeholder={t('form.correctionPlaceholder')}
+                aria-invalid={!!errors.correction}
+                {...register('correction')}
+              />
+            </Field>
+          </Section>
+        </fieldset>
+
+        {/* Barre d'actions */}
+        <div className='sticky bottom-0 z-10 flex flex-col-reverse gap-3 rounded-b-xl border-0 border-t border-solid border-gray-200 bg-gray-50/95 px-6 py-4 backdrop-blur sm:flex-row sm:items-center sm:justify-between'>
+          <div>
+            {canDelete && (
+              <Button variant='danger' icon='mdi:trash-can-outline' onClick={() => setConfirmDelete(true)}>
+                {t('common.delete')}
+              </Button>
+            )}
+          </div>
+          <div className='flex gap-2 sm:justify-end'>
+            <Button variant='secondary' className='flex-1 sm:flex-none' onClick={() => router.back()}>
+              {t('common.cancel')}
+            </Button>
+            {canSave && (
+              <Button type='submit' icon='mdi:content-save-outline' loading={submitting} className='flex-1 sm:flex-none'>
+                {submitting ? t('common.saving') : t('common.save')}
+              </Button>
+            )}
+          </div>
+        </div>
+      </form>
+
+      <ConfirmDialog
+        open={confirmDelete}
+        danger
+        loading={deleting}
+        title={t('form.confirmDeleteTitle')}
+        message={t('form.confirmDeleteText', { ref: data?.reference ?? '' })}
+        confirmLabel={t('common.delete')}
+        onCancel={() => setConfirmDelete(false)}
+        onConfirm={handleDelete}
+      />
+    </div>
   )
 }
 

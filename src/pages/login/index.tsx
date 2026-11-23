@@ -1,63 +1,16 @@
-// ** React Imports
-import { useState, ReactNode } from 'react'
-
-// ** Next Imports
-
-// ** MUI Components
-import Button from '@mui/material/Button'
-import TextField from '@mui/material/TextField'
-import InputLabel from '@mui/material/InputLabel'
-import IconButton from '@mui/material/IconButton'
-import Box from '@mui/material/Box'
-import FormControl from '@mui/material/FormControl'
-import OutlinedInput from '@mui/material/OutlinedInput'
-import { useTheme } from '@mui/material/styles'
-import FormHelperText from '@mui/material/FormHelperText'
-import InputAdornment from '@mui/material/InputAdornment'
-import Typography from '@mui/material/Typography'
-import CryptoJS from "crypto-js";
-
-// ** Icon Imports
-import Icon from 'src/@core/components/icon'
-
-// ** Third Party Imports
+// Page de connexion — Tailwind, charte Dekel, FR / EN
+import { ReactNode, useMemo, useState } from 'react'
+import { useRouter } from 'next/router'
+import { getProviders, getSession, signIn } from 'next-auth/react'
+import CryptoJS from 'crypto-js'
 import * as yup from 'yup'
-import { useForm, Controller } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 
-// ** Hooks
-import { useSettings } from 'src/@core/hooks/useSettings'
-
-// ** Configs
-import themeConfig from 'src/configs/themeConfig'
-
-// ** Layout Import
+import Icon from 'src/@core/components/icon'
 import BlankLayout from 'src/@core/layouts/BlankLayout'
-
-// ** Demo Imports
-import { Alert, Card, CardContent } from '@mui/material'
-import FooterIllustrationsV1 from './FooterIllustrationsV1'
-import { getProviders, getSession, signIn } from 'next-auth/react'
-import { useRouter } from 'next/router'
-import { ImgStyled } from 'src/myCustomFunctions'
-
-// ** Styled Components
-
-
-
-
-
-
-
-const schema = yup.object().shape({
-  username: yup.string().required('Nom utilisateur est obligatoire'),
-  password: yup.string().min(5).required('Mot de passe est obligatoire')
-})
-
-const defaultValues = {
-  password: '',
-  username: ''
-}
+import { useHd } from 'src/i18n/helpdesk'
+import { Button, Field, LangSwitch, cn } from 'src/components/hd'
 
 interface FormData {
   username: string
@@ -65,201 +18,155 @@ interface FormData {
 }
 
 const LoginPage = () => {
-  const [showPassword, setShowPassword] = useState<boolean>(false)
+  const router = useRouter()
+  const { t, lang } = useHd()
+  const [showPassword, setShowPassword] = useState(false)
+  const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
-  // ** Hooks
-  const theme = useTheme()
-  const { settings } = useSettings()
-  const router = useRouter();
-  const [showAlert, setShowAlert] = useState('');
-
-  // ** Vars
+  const schema = useMemo(
+    () =>
+      yup.object({
+        username: yup.string().trim().required(t('login.usernameRequired')),
+        password: yup.string().required(t('login.passwordRequired')).min(5, t('login.passwordMin'))
+      }),
+    [t, lang] // eslint-disable-line react-hooks/exhaustive-deps
+  )
 
   const {
-    control,
+    register,
     handleSubmit,
     formState: { errors }
-  } = useForm({
-    defaultValues,
-    mode: 'onBlur',
-    resolver: yupResolver(schema)
-  })
+  } = useForm<FormData>({ defaultValues: { username: '', password: '' }, mode: 'onTouched', resolver: yupResolver(schema) })
 
-  /*const onSubmit = (data: FormData) => {
-    const { username, password } = data
-    auth.login({ username, password}, () => {
-      setError('username', {
-        type: 'manual',
-        message: `${"le nom d'utilisateur ou le mot de passe est invalide"}`
-      })
-
+  const onSubmit = async ({ username, password }: FormData) => {
+    setSubmitting(true)
+    setError('')
+    const SECRET_KEY: any = process.env.NEXT_PUBLIC_CRYPTO_KEY
+    // chiffrement AES (inchangé : attendu par le provider « credentials »)
+    const res: any = await signIn('credentials', {
+      username: CryptoJS.AES.encrypt(username.trim(), SECRET_KEY).toString(),
+      password: CryptoJS.AES.encrypt(password, SECRET_KEY).toString(),
+      redirect: false,
+      callbackUrl: '/'
     })
-  }*/
-  const onSubmit = async (data: FormData) => {
-   const SECRET_KEY:any = process.env.NEXT_PUBLIC_CRYPTO_KEY ;
-
-   const { username, password } = data
-   // chiffrement AES
-  const encryptedUsername = CryptoJS.AES.encrypt(username, SECRET_KEY).toString();
-  const encryptedPassword = CryptoJS.AES.encrypt(password, SECRET_KEY).toString();
-  const res:any =await signIn("credentials", {
-    username: encryptedUsername,
-    password: encryptedPassword,
-    redirect: false,
-    callbackUrl: `/`,
-  })
-
-    // 🔹 Vérifie l'erreur
-    if (res?.error) {
-      let err;
+    if (!res || res.error) {
+      let message = t('login.invalid')
       try {
-        err = JSON.parse(res.error); // si authorize() a throw JSON
+        message = JSON.parse(res?.error)?.message || message
       } catch {
-        err = { message: res.error };
+        /* message par défaut */
       }
-
-      setShowAlert(err.message || "Nomm d'utilisateur ou mot de passe incorrect");
-    } else {
-      setShowAlert(''); // login OK
+      setError(message)
+      setSubmitting(false)
+      return
     }
-        if (res.url) router.push(res.url);
-
-      };
+    router.push(res.url || '/')
+  }
 
   return (
-    <Box className='content-center'>
-    <Card sx={{ zIndex: 1, width: '100%', maxWidth: 450 }}>
-      <CardContent
-        sx={theme => ({
-          p: `${theme.spacing(7, 4, 6)} !important`,
-          [theme.breakpoints.up('sm')]: {
-            p: `${theme.spacing(12, 9, 7)} !important`
-          }
-        })}
-      >
-        <Box sx={{ mb: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-               <Box sx={{  display: 'flex', alignItems: 'left', marginLeft:-5}}>
-                  <ImgStyled src='/images/monlogo.png' />
-                </Box>
+    <div className='flex min-h-screen w-full bg-white font-sans'>
+      {/* Panneau marque */}
+      <div className='relative hidden w-[46%] flex-col justify-between overflow-hidden bg-brand-600 p-12 text-white lg:flex'>
+        <div className='absolute -right-24 -top-24 h-80 w-80 rounded-full bg-brand-500/40' />
+        <div className='absolute -bottom-32 -left-20 h-96 w-96 rounded-full bg-brand-700/60' />
+        <div className='relative flex items-center gap-3'>
+          <span className='flex items-center rounded-xl bg-white px-3 py-2 shadow-card'>
+            <img src='/images/bobrain-logo.png' alt='BOBRAIN' className='h-9 w-auto' />
+          </span>
+          <span className='text-xs font-bold uppercase tracking-wider text-harvest-500'>Helpdesk</span>
+        </div>
+        <div className='relative max-w-md'>
+          <h2 className='m-0 text-3xl font-bold leading-tight'>{t('login.heroTitle')}</h2>
+          <p className='m-0 mt-4 text-base text-brand-100'>{t('login.heroText')}</p>
+          <ul className='m-0 mt-8 list-none space-y-3 p-0'>
+            {['heroPoint1', 'heroPoint2', 'heroPoint3'].map(k => (
+              <li key={k} className='flex items-center gap-3 text-sm'>
+                <span className='flex h-6 w-6 items-center justify-center rounded-full bg-harvest-500 text-white'>
+                  <Icon icon='mdi:check' fontSize={14} />
+                </span>
+                {t(`login.${k}`)}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <p className='relative m-0 text-xs text-brand-200'>© {new Date().getFullYear()} Dekel Agri-Vision</p>
+      </div>
 
-        </Box>
-        <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      {/* Formulaire */}
+      <div className='flex flex-1 flex-col'>
+        <div className='flex justify-end p-5'>
+          <LangSwitch />
+        </div>
+        <div className='flex flex-1 items-center justify-center px-6 pb-16'>
+          <div className='w-full max-w-sm animate-fade-in'>
+            <img src='/images/bobrain-logo.png' alt='BOBRAIN' className='mb-8 h-14 w-auto lg:hidden' />
+            <h1 className='m-0 text-2xl font-bold text-gray-900'>{t('login.title')}</h1>
+            <p className='m-0 mt-1.5 text-sm text-gray-500'>{t('login.subtitle')}</p>
 
-          <Typography
-            variant='h6'
-            sx={{
-              ml: 3,
-              lineHeight: 1,
-              fontWeight: 600,
-              textTransform: 'uppercase',
-              fontSize: '1.5rem !important'
-            }}
-          >
-          </Typography>
-        </Box>
-        <Box sx={{ mb: 4 }}>
-          <Typography variant='h5' sx={{ fontWeight: 600, mb: 1.5 }}>
-            Bienvenue à {themeConfig.templateName}! 👋🏻
-          </Typography>
-          <Typography variant='body2'>Veuillez vous connecter à votre compte et commencer l'aventure</Typography>
-        </Box>
-        <form noValidate autoComplete='off' onSubmit={handleSubmit(onSubmit)}>
-              <FormControl fullWidth sx={{ mb: 4 }}>
-                <Controller
-                  name='username'
-                  control={control}
-                  rules={{ required: true }}
-                  render={({ field: { value, onChange, onBlur } }) => (
-                    <TextField
-                      autoFocus
-                      label='Nom Utilisateur'
-                      value={value}
-                      onBlur={onBlur}
-                      onChange={onChange}
-                      error={Boolean(errors.username)}
-                    />
-                  )}
+            {error && (
+              <div role='alert' className='mt-6 flex items-start gap-2 rounded-lg border border-solid border-red-200 bg-red-50 px-3.5 py-3 text-sm text-red-700'>
+                <Icon icon='mdi:alert-circle-outline' fontSize={18} className='mt-px shrink-0' />
+                {error}
+              </div>
+            )}
+
+            <form noValidate autoComplete='off' onSubmit={handleSubmit(onSubmit)} className='mt-6 space-y-1'>
+              <Field id='username' label={t('login.username')} error={errors.username?.message}>
+                <input
+                  id='username'
+                  autoFocus
+                  autoComplete='username'
+                  className={cn('hd-input', errors.username && 'hd-input-error')}
+                  aria-invalid={!!errors.username}
+                  {...register('username')}
                 />
-                {errors.username && <FormHelperText sx={{ color:'error.main'}}>{errors.username.message}</FormHelperText>}
-              </FormControl>          <FormControl fullWidth>
-                <InputLabel htmlFor='auth-login-v2-password' error={Boolean(errors.password)}>
-                  Mot de passe
-                </InputLabel>
-                <Controller
-                  name='password'
-                  control={control}
-                  rules={{ required: true }}
-                  render={({ field: { value, onChange, onBlur } }) => (
-                    <OutlinedInput
-                      value={value}
-                      onBlur={onBlur}
-                      label='Password'
-                      onChange={onChange}
-                      id='auth-login-v2-password'
-                      error={Boolean(errors.password)}
-                      type={showPassword ? 'text' : 'password'}
-                      endAdornment={
-                        <InputAdornment position='end'>
-                          <IconButton
-                            edge='end'
-                            onMouseDown={e => e.preventDefault()}
-                            onClick={() => setShowPassword(!showPassword)}
-                          >
-                            <Icon icon={showPassword ? 'mdi:eye-outline' : 'mdi:eye-off-outline'} fontSize={20} />
-                          </IconButton>
-                        </InputAdornment>
-                      }
-                    />
-                  )}/>
-                {errors.password && (
-                  <FormHelperText sx={{ color: 'error.main' }} id=''>
-                    {errors.password.message}
-                  </FormHelperText>
-                )}
-              </FormControl>
-          <Box  sx={{ mb: 4, display: 'flex', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'space-between' }} >
-          </Box>
-          <Button fullWidth size='large' type='submit' variant='contained' sx={{ mb: 7 }}>
-            Se connecter
-          </Button>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              {showAlert?<Alert severity="error">{showAlert}</Alert>:"" }
-              </Box>
-        </form>
-      </CardContent>
-    </Card>
-    <FooterIllustrationsV1 />
-
-  </Box>
+              </Field>
+              <Field id='password' label={t('login.password')} error={errors.password?.message}>
+                <div className='relative'>
+                  <input
+                    id='password'
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete='current-password'
+                    className={cn('hd-input pr-11', errors.password && 'hd-input-error')}
+                    aria-invalid={!!errors.password}
+                    {...register('password')}
+                  />
+                  <button
+                    type='button'
+                    aria-label={t('login.showPassword')}
+                    onMouseDown={e => e.preventDefault()}
+                    onClick={() => setShowPassword(v => !v)}
+                    className='absolute inset-y-0 right-1.5 my-auto flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border-0 bg-transparent text-gray-400 hover:text-gray-700'
+                  >
+                    <Icon icon={showPassword ? 'mdi:eye-outline' : 'mdi:eye-off-outline'} fontSize={18} />
+                  </button>
+                </div>
+              </Field>
+              <Button type='submit' loading={submitting} className='!mt-4 h-11 w-full' icon='mdi:login-variant'>
+                {submitting ? t('login.submitting') : t('login.submit')}
+              </Button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
 
 export const getServerSideProps = async (context: any) => {
-  const { req } = context;
+  const { req } = context
+  const session = await getSession({ req })
 
-  const session = await getSession({ req });
-
-  // Only redirect an already-authenticated user away from /login.
-  // (No dispatch to the redux `store` here: that store is a single
-  // instance shared by the whole Node server process, so writing a
-  // per-request session into it would leak between concurrent users.)
+  // Redirige un utilisateur déjà connecté (pas d'écriture dans le store redux global ici).
   if (session?.user) {
-    return {
-      redirect: {
-        destination: '/',
-        permanent: false,
-      },
-    };
+    return { redirect: { destination: '/', permanent: false } }
   }
 
-  return {
-    props: {
-      providers: (await getProviders()) ?? [],
-    },
-  };
+  return { props: { providers: (await getProviders()) ?? [] } }
 }
-LoginPage.getLayout = (page: ReactNode) => <BlankLayout>{page}</BlankLayout>
 
+LoginPage.getLayout = (page: ReactNode) => <BlankLayout>{page}</BlankLayout>
 LoginPage.guestGuard = true
 
 export default LoginPage

@@ -1,245 +1,162 @@
-// ** MUI Imports
-import Grid from '@mui/material/Grid'
-import Card from '@mui/material/Card'
-import Divider from '@mui/material/Divider'
-import Typography from '@mui/material/Typography'
-import CardContent from '@mui/material/CardContent'
-import Chip from '@mui/material/Chip'
-import Stack from '@mui/material/Stack'
-import Avatar from '@mui/material/Avatar'
-import Box from '@mui/material/Box'
-
-// ** Icons
-import Icon from 'src/@core/components/icon'
-
-// ** Utils
-import moment from 'moment'
-import { translate } from 'react-translate'
-import { ImgStyled } from 'src/myCustomFunctions'
+// Fiche détail d'une demande — Tailwind, charte DKL, FR/EN (imprimable)
+import { ReactNode } from 'react'
 import { useSelector } from 'react-redux'
+import Icon from 'src/@core/components/icon'
 import { RootState } from 'src/redux/store'
-import { enumStatus } from 'src/definitions/enum'
+import { useHd } from 'src/i18n/helpdesk'
+import { PriorityBadge, StatusBadge } from 'src/components/hd'
+import { labAgentName, userName } from '../shared/options'
 
 interface Props {
-  data: any
   printref?: any
-  t?: any
+  [key: string]: any
 }
 
-const statusColor: Record<string, 'warning' | 'info' | 'success' | 'error' | 'default'> = {
-  [enumStatus.Open]: 'warning',
-  [enumStatus.Approved]: 'info',
-  [enumStatus.Treated]: 'info',
-  [enumStatus.Closed]: 'success',
-  [enumStatus.Rejected]: 'error',
-  [enumStatus.Cancelled]: 'default'
-}
-
-const InfoItem = ({ icon, label, value }: { icon: string; label: string; value: any }) => (
-  <Stack direction="row" spacing={1.5} alignItems="flex-start">
-    <Box
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: 32,
-        height: 32,
-        borderRadius: 1.5,
-        backgroundColor: 'action.selected',
-        color: 'text.secondary',
-        flexShrink: 0
-      }}
-    >
+const Info = ({ icon, label, children }: { icon: string; label: string; children: ReactNode }) => (
+  <div className='flex min-w-0 items-start gap-3'>
+    <span className='flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600'>
       <Icon icon={icon} fontSize={18} />
-    </Box>
-    <Box>
-      <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.4 }}>
-        {label}
-      </Typography>
-      <Typography fontWeight={600}>{value || '—'}</Typography>
-    </Box>
-  </Stack>
+    </span>
+    <div className='min-w-0'>
+      <p className='m-0 text-[11px] font-semibold uppercase tracking-wide text-gray-500'>{label}</p>
+      <div className='mt-0.5 break-words text-sm font-semibold text-gray-900'>{children || '—'}</div>
+    </div>
+  </div>
 )
 
-const PreviewCard = ({ printref, t }: Props) => {
+const TextBlock = ({ title, icon, accent, children }: { title: string; icon: string; accent: string; children?: string }) => (
+  <div className={`rounded-lg border border-solid border-gray-200 border-l-4 ${accent} bg-white p-4`}>
+    <p className='m-0 mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-brand-700'>
+      <Icon icon={icon} fontSize={16} />
+      {title}
+    </p>
+    <p className='m-0 whitespace-pre-wrap text-sm leading-relaxed text-gray-800'>{children?.trim() || '—'}</p>
+  </div>
+)
+
+const actorName = (a: any) =>
+  [a?.userData?.lastName, a?.userData?.firstName].filter(Boolean).join(' ') || a?.username || a?.userData?.username || '—'
+
+const PreviewCard = ({ printref }: Props) => {
   const data = useSelector((state: RootState) => state.requester.previewdata)
+  const { t, formatDate } = useHd()
 
   if (!data) return null
 
-  const historyEvents = [
-    data.approvedBy && {
-      label: 'Approuvé par',
-      firstName: data.approvedBy.userData.firstName,
-      lastName: data.approvedBy.userData.lastName,
-      date: data.approvedAt,
-      icon: 'mdi:check-circle-outline',
-      color: 'success.main'
-    },
-    data.treatedBy && {
-      label: 'Traité par',
-      firstName: data.treatedBy.userData.firstName,
-      lastName: data.treatedBy.userData.lastName,
-      date: data.treatedAt,
-      icon: 'mdi:wrench-outline',
-      color: 'info.main'
-    },
-    data.rejectedBy && {
-      label: 'Rejeté par',
-      firstName: data.rejectedBy.userData.firstName,
-      lastName: data.rejectedBy.userData.lastName,
-      date: data.rejectedAt,
-      icon: 'mdi:close-circle-outline',
-      color: 'error.main'
-    },
-    data.closedBy && {
-      label: 'Clôturé par',
-      firstName: data.closedBy.userData.firstName,
-      lastName: data.closedBy.userData.lastName,
-      date: data.closedAt,
-      icon: 'mdi:lock-check-outline',
-      color: 'text.secondary'
-    },
-    data.cancelledBy && {
-      label: 'Annulé par',
-      firstName: data.cancelledBy.userData.firstName,
-      lastName: data.cancelledBy.userData.lastName,
-      date: data.cancelledAt,
-      icon: 'mdi:cancel',
-      color: 'warning.main'
-    }
-  ].filter(Boolean) as Array<{
-    label: string
-    firstName: string
-    lastName: string
-    date: string
-    icon: string
-    color: string
-  }>
+  const tickets = String(data.ticket ?? '')
+    .split(',')
+    .map((s: string) => s.trim())
+    .filter(Boolean)
+
+  const history = [
+    { key: 'created', who: data.createdBy, at: data.createdAt, icon: 'mdi:plus-circle-outline', dot: 'bg-sky-500' },
+    { key: 'approved', who: data.approvedBy, at: data.approvedAt, icon: 'mdi:check-circle-outline', dot: 'bg-brand-600' },
+    { key: 'rejected', who: data.rejectedBy, at: data.rejectedAt, icon: 'mdi:close-circle-outline', dot: 'bg-red-500' },
+    { key: 'treated', who: data.treatedBy, at: data.treatedAt, icon: 'mdi:wrench-check-outline', dot: 'bg-leaf-500' },
+    { key: 'cancelled', who: data.cancelledBy, at: data.cancelledAt, icon: 'mdi:cancel', dot: 'bg-gray-400' },
+    { key: 'closed', who: data.closedBy, at: data.closedAt, icon: 'mdi:lock-check-outline', dot: 'bg-gray-700' }
+  ]
+    .filter(h => h.who)
+    .sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime())
 
   return (
-    <Card ref={printref} sx={{ borderRadius: 2 }}>
-      {/* ================= HEADER ================= */}
-      <CardContent sx={{ py: 4 }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} sm={6}>
-            <Stack spacing={0.5}>
-              <ImgStyled src="/images/monlogo.png" />
-              <Typography variant="h6" fontWeight={700}>
-                Helpdesk
-              </Typography>
-            </Stack>
-          </Grid>
+    <div ref={printref} className='hd-card overflow-hidden font-sans'>
+      {/* En-tête */}
+      <div className='flex flex-col gap-3 bg-brand-600 px-6 py-5 text-white sm:flex-row sm:items-center sm:justify-between'>
+        <div className='min-w-0'>
+          <p className='m-0 text-[11px] font-bold uppercase tracking-widest text-leaf-100'>BOBRAIN HELPDESK</p>
+          <h2 className='m-0 mt-1 text-xl font-bold'>{t('preview.title', { ref: data.reference })}</h2>
+          <p className='m-0 mt-1 text-sm text-brand-100'>
+            {t('preview.createdBy', { user: actorName(data.createdBy), date: formatDate(data.createdAt) })}
+          </p>
+        </div>
+        <div className='flex items-center gap-3 rounded-lg bg-white px-3 py-2'>
+          <PriorityBadge priority={data.priority} />
+          <span className='h-4 w-px bg-gray-200' />
+          <StatusBadge status={data.status} />
+        </div>
+      </div>
 
-          <Grid item xs={12} sm={6} sx={{ textAlign: { xs: 'left', sm: 'right' } }}>
-            <Stack direction="row" spacing={1} justifyContent={{ xs: 'flex-start', sm: 'flex-end' }}>
-              <Chip
-                label={t ? t(data.status) : data.status}
-                color={statusColor[data.status] ?? 'default'}
-                size="small"
-                sx={{ fontWeight: 600 }}
-              />
-              <Chip label={t ? t(data.priority) : data.priority} color="error" variant="outlined" size="small" />
-            </Stack>
-
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
-              Créé le {moment(data.createdAt).format('DD/MM/YYYY à HH:mm')}
-            </Typography>
-          </Grid>
-        </Grid>
-      </CardContent>
-
-      <Divider />
-
-      {/* ================= META ================= */}
-      <CardContent sx={{ py: 4 }}>
-        <Grid container spacing={4}>
-          <Grid item xs={12} sm={6}>
-            <InfoItem icon="mdi:pound-box-outline" label="Référence" value={data.reference} />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <InfoItem icon="mdi:ticket-confirmation-outline" label="Ticket" value={data.ticket} />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <InfoItem icon="mdi:tag-outline" label="Type" value={data?.requesttype?.displayName} />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <InfoItem icon="mdi:map-marker-outline" label="Station" value={data?.station?.displayName} />
-          </Grid>
-        </Grid>
-      </CardContent>
-
-      <Divider />
-
-      {/* ================= DEMANDEUR / HISTORIQUE ================= */}
-      <CardContent sx={{ py: 4 }}>
-        <Grid container spacing={4}>
-          <Grid item xs={12} sm={historyEvents.length ? 6 : 12}>
-            <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: 0.6 }}>
-              Demandeur
-            </Typography>
-            <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mt: 1 }}>
-              <Avatar sx={{ width: 36, height: 36, bgcolor: 'primary.main' }}>
-                <Icon icon="mdi:account-outline" fontSize={20} />
-              </Avatar>
-              <Box>
-                <Typography fontWeight={600}>{data?.createdBy?.userData?.username}</Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {data?.createdBy?.userData?.email ?? ''}
-                </Typography>
-              </Box>
-            </Stack>
-          </Grid>
-
-          {historyEvents.length > 0 && (
-            <Grid item xs={12} sm={6}>
-              <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: 0.6 }}>
-                Historique
-              </Typography>
-              <Stack spacing={2} sx={{ mt: 1 }}>
-                {historyEvents.map(event => (
-                  <Stack direction="row" spacing={1.5} alignItems="center" key={event.label}>
-                    <Avatar sx={{ width: 32, height: 32, bgcolor: event.color }}>
-                      <Icon icon={event.icon} fontSize={18} />
-                    </Avatar>
-                    <Box>
-                      <Typography variant="body2" fontWeight={600}>
-                        {event.label} {event.firstName} {event.lastName}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {moment(event.date).format('DD/MM/YYYY à HH:mm')}
-                      </Typography>
-                    </Box>
-                  </Stack>
-                ))}
-              </Stack>
-            </Grid>
+      {/* Informations */}
+      <div className='grid gap-5 border-0 border-b border-solid border-gray-100 px-6 py-6 sm:grid-cols-2 xl:grid-cols-3'>
+        <Info icon='mdi:ticket-confirmation-outline' label={t('form.ticket')}>
+          <div className='flex flex-wrap gap-1'>
+            {tickets.length
+              ? tickets.map((tk: string) => (
+                  <span key={tk} className='rounded bg-gray-100 px-1.5 py-0.5 font-mono text-xs'>
+                    {tk}
+                  </span>
+                ))
+              : '—'}
+          </div>
+        </Info>
+        <Info icon='mdi:factory' label={t('form.station')}>
+          {data.station?.displayName}
+        </Info>
+        <Info icon='mdi:shape-outline' label={t('form.requestType')}>
+          {data.requesttype?.displayName}
+        </Info>
+        <Info icon='mdi:flask-outline' label={t('form.labAgent')}>
+          {data.labAgent && (
+            <>
+              {labAgentName(data.labAgent)}
+              <span className='ml-1 font-mono text-xs font-normal text-gray-500'>({data.labAgent.matricule})</span>
+            </>
           )}
-        </Grid>
-      </CardContent>
+        </Info>
+        <Info icon='mdi:account-tie-outline' label={t('form.operator')}>
+          {data.operator && userName(data.operator)}
+        </Info>
+        <Info icon='mdi:domain' label={t('form.branch')}>
+          {data.branch?.displayName}
+        </Info>
+      </div>
 
-      <Divider />
+      {/* Problème & correction */}
+      <div className='grid gap-4 px-6 py-6 lg:grid-cols-2'>
+        <TextBlock title={t('preview.problem')} icon='mdi:alert-circle-outline' accent='border-l-harvest-500'>
+          {data.description}
+        </TextBlock>
+        <TextBlock title={t('preview.correction')} icon='mdi:check-decagram-outline' accent='border-l-leaf-500'>
+          {data.correction}
+        </TextBlock>
+        {data.title && !data.correction && (
+          <p className='m-0 text-xs text-gray-500 lg:col-span-2'>
+            {t('preview.legacyTitle')} : <span className='font-semibold text-gray-700'>{data.title}</span>
+          </p>
+        )}
+      </div>
 
-      {/* ================= TITRE ================= */}
-      <CardContent sx={{ py: 4 }}>
-        <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: 0.6 }}>
-          Titre
-        </Typography>
-        <Typography variant="h6" sx={{ mt: 0.5 }}>
-          {data.title}
-        </Typography>
-      </CardContent>
+      {/* Historique */}
+      <div className='border-0 border-t border-solid border-gray-100 bg-gray-50 px-6 py-5'>
+        <p className='m-0 mb-4 text-xs font-bold uppercase tracking-wide text-brand-700'>{t('preview.history')}</p>
+        <ol className='m-0 list-none space-y-4 p-0'>
+          {history.map((h, i) => (
+            <li key={h.key} className='relative flex gap-3 pl-0'>
+              {i < history.length - 1 && <span className='absolute left-[15px] top-8 h-[calc(100%-8px)] w-px bg-gray-200' />}
+              <span className={`relative z-[1] flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white ${h.dot}`}>
+                <Icon icon={h.icon} fontSize={16} />
+              </span>
+              <div className='min-w-0 pt-0.5'>
+                <p className='m-0 text-sm font-semibold text-gray-900'>
+                  {t(`preview.${h.key}`)} <span className='font-normal text-gray-500'>· {actorName(h.who)}</span>
+                </p>
+                <p className='m-0 text-xs tabular-nums text-gray-500'>{formatDate(h.at)}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </div>
 
-      <Divider />
-
-      {/* ================= DESCRIPTION ================= */}
-      <CardContent sx={{ py: 4 }}>
-        <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: 0.6 }}>
-          Description
-        </Typography>
-        <Typography sx={{ whiteSpace: 'pre-line', mt: 0.5 }}>{data.description}</Typography>
-      </CardContent>
-    </Card>
+      {/* Pied de page charte (impression) */}
+      <div className='flex items-center justify-between bg-brand-600 px-6 py-2 text-xs text-white'>
+        <span>Dekel Agri-Vision · Helpdesk</span>
+        <span className='flex h-6 min-w-[1.5rem] items-center justify-center rounded-full bg-harvest-500 px-2 font-bold'>
+          {data.reference}
+        </span>
+      </div>
+    </div>
   )
 }
 
-export default translate('Requester')(PreviewCard)
+export default PreviewCard

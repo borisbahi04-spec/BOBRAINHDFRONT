@@ -4,7 +4,8 @@ import HttpService from "../HttpService";
 import queryString from "query-string";
 
 const requesterUri='requester';
-const relations="station,requesttype,branch,createdBy,approvedBy,rejectedBy,closedBy,cancelledBy,treatedBy,user";
+export const REQUESTER_RELATIONS="station,requesttype,branch,labAgent,operator,createdBy,approvedBy,rejectedBy,closedBy,cancelledBy,treatedBy";
+const relations=REQUESTER_RELATIONS;
 
 export const  requestersService = ()=>{
   const Url  = `${requesterUri}?relations=${relations}`;
@@ -16,26 +17,67 @@ return returnResponse(http.getData(Url))
 
 
 
-export const getSearchrequestersService = (requester:any,pgquery:any)=>{
- const query=queryString.stringify({
-    relations:relations,
-    where:JSON.stringify([
-      ...(requester.value ?[{value:requester.value}]:[]),
-      ...(requester.requesttypeId ?[{value:requester.requesttypeId,attribute:'requesttype.id'}]:[]),
-      ...(requester.stationId ?[{value:requester.stationId,attribute:'station.id'}]:[]),
-      ...(requester.createdById ?[{value:requester.createdById,attribute:'createdBy.userId'}]:[]),
-      ...(requester.status ?[{value:requester.status,attribute:'status'}]:[]),
-      ...(requester.priority ?[{value:requester.priority,attribute:'priority'}]:[]),
-      ...(requester.startdate ?[{value:requester.startdate,attribute:'createdAt',type :'greaterThanOrEquals'}]:[]),
-      ...(requester.enddate ?[{value:[requester.startdate,requester.enddate],attribute:'createdAt',type :'between'}]:[]),
+/** Filtres de la liste des demandes */
+export interface RequesterFilters {
+  value?: string
+  status?: string
+  priority?: string
+  requesttypeId?: string
+  stationId?: string
+  labAgentId?: string
+  operatorId?: string
+  createdById?: string
+  startdate?: string // YYYY-MM-DD
+  enddate?: string // YYYY-MM-DD
+}
 
-    ])
-  },{arrayFormat: 'index',skipNull:true,skipEmptyString:true})
-  const Url=`${requesterUri}?${query}&page=${pgquery.page}&per_page=${pgquery.per_page}`
-  const http = new HttpService();
+/** Construit le paramètre `where` attendu par l'API (buildFilterFromApiSearchParams) */
+export const buildRequesterWhere = (f: RequesterFilters = {}) => {
+  const where: any[] = []
+  if (f.value?.trim()) where.push({ value: f.value.trim() })
+  if (f.requesttypeId) where.push({ value: f.requesttypeId, attribute: 'requesttype.id' })
+  if (f.stationId) where.push({ value: f.stationId, attribute: 'station.id' })
+  if (f.labAgentId) where.push({ value: f.labAgentId, attribute: 'labAgent.id' })
+  if (f.operatorId) where.push({ value: f.operatorId, attribute: 'operator.id' })
+  if (f.createdById) where.push({ value: f.createdById, attribute: 'createdBy.userId' })
+  if (f.status) where.push({ value: f.status, attribute: 'status' })
+  if (f.priority) where.push({ value: f.priority, attribute: 'priority' })
+
+  // Période : bornes inclusives (la fin couvre toute la journée)
+  if (f.startdate && f.enddate) {
+    where.push({ value: [`${f.startdate} 00:00:00`, `${f.enddate} 23:59:59`], attribute: 'createdAt', type: 'between' })
+  } else if (f.startdate) {
+    where.push({ value: `${f.startdate} 00:00:00`, attribute: 'createdAt', type: 'greaterThanOrEquals' })
+  } else if (f.enddate) {
+    where.push({ value: f.enddate, attribute: 'createdAt', type: 'lessThanOrEquals' })
+  }
+  return where
+}
+
+export const getSearchrequestersService = (requester: RequesterFilters | string, pgquery: any) => {
+  const filters: RequesterFilters = typeof requester === 'string' ? { value: requester } : requester ?? {}
+  const query = queryString.stringify(
+    { relations, where: JSON.stringify(buildRequesterWhere(filters)) },
+    { arrayFormat: 'index', skipNull: true, skipEmptyString: true }
+  )
+  const Url = `${requesterUri}?${query}&page=${pgquery?.page ?? 1}&per_page=${pgquery?.per_page ?? 25}`
+  const http = new HttpService()
   return returnResponse(http.getData(Url))
 }
 
+/** Opératrices sélectionnables (rôle opérateur) */
+export const lookupOperatorsService = (q = '') => {
+  const http = new HttpService()
+  return returnResponse(http.getData(`${requesterUri}/lookups/operators?${queryString.stringify({ q, limit: 20 })}`))
+}
+
+/** Agents labo (actifs, sauf all=true) */
+export const lookupLabAgentsService = (q = '', all = false) => {
+  const http = new HttpService()
+  return returnResponse(
+    http.getData(`${requesterUri}/lookups/lab-agents?${queryString.stringify({ q, all: all ? 'true' : undefined, limit: 20 })}`)
+  )
+}
 
 export const getByIdrequestersService = (id:string)=>{
   const Url  = `${requesterUri}/${id}?relations=${relations}`;

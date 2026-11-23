@@ -22,8 +22,12 @@ class CustomDocument extends Document {
             rel='stylesheet'
             href='https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap'
           />
-          <link rel='apple-touch-icon' sizes='180x180' href='/images/apple-touch-icon.png' />
-          <link rel='shortcut icon' href='/images/favicon.png' />
+          {/* Favicon BOBRAIN (?v=2 : force le rafraîchissement du cache navigateur) */}
+          <link rel='icon' href='/favicon.ico?v=2' sizes='any' />
+          <link rel='icon' type='image/png' sizes='32x32' href='/images/favicon-32.png?v=2' />
+          <link rel='icon' type='image/png' sizes='192x192' href='/images/icon-192.png?v=2' />
+          <link rel='apple-touch-icon' sizes='180x180' href='/images/apple-touch-icon.png?v=2' />
+          <meta name='theme-color' content='#174E26' />
         </Head>
         <body>
           <Main />

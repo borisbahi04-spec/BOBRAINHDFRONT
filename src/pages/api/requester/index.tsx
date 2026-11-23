@@ -2,7 +2,7 @@ import { getBackendUrl } from "src/utils/backendUrl";
 
 export default async function handler(req:any,res:any) {
   const token = req.headers[`${process.env.XUSERCLAIMS}`];
-  const relations="station,requesttype,branch,createdBy,user";
+  const relations="station,requesttype,branch,labAgent,operator,createdBy";
   const response = await fetch(`${getBackendUrl()}/${process.env.ENTITYREQUESTER}?relations=${relations}&page=${1}&per_page=${25}`,{
     headers: {
       'x-user-claims': `${token}`,
@@ -15,7 +15,9 @@ export default async function handler(req:any,res:any) {
     const requester = await response.json();
     res.status(200).json(requester);
   } else {
-    // Handle other response status codes (e.g., 404, 500) here
+    // toujours répondre (sinon la requête reste pendante)
+    const body = await response.json().catch(() => ({}))
+    res.status(response.status).json({ errors: body?.errors ?? [body?.message ?? 'Erreur'], ...body })
   }
 
 }

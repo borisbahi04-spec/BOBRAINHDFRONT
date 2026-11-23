@@ -20,6 +20,7 @@ import HorizontalNavItems from 'src/navigation/horizontal'
 
 import VerticalAppBarContent from './components/vertical/AppBarContent'
 import HorizontalAppBarContent from './components/horizontal/AppBarContent'
+import HdLayout from './hd/HdLayout'
 
 // ** Hook Import
 import { useSettings } from 'src/@core/hooks/useSettings'
@@ -94,55 +95,10 @@ const UserLayout = ({children, contentHeightFixed }: Props) => {
   },[token])
 
 
-  return (
-    <Layout
-      hidden={hidden}
-      settings={settings}
-      saveSettings={saveSettings}
-      contentHeightFixed={contentHeightFixed}
-      verticalLayoutProps={{
-        navMenu: {
-          navItems: VerticalNavItems(),
-          afterContent: () => <MenuFooter/>,
-
-          // Uncomment the below line when using server-side menu in vertical layout and comment the above line
-          // navItems: verticalMenuItems
-        },
-        appBar: {
-          content: props => (
-             <VerticalAppBarContent
-              hidden={hidden}
-              settings={settings}
-              saveSettings={saveSettings}
-              toggleNavVisibility={props.toggleNavVisibility}
-            />
-          )
-        }
-      }}
-      {...(settings.layout === 'horizontal' && {
-        horizontalLayoutProps: {
-          navMenu: {
-            navItems: HorizontalNavItems()
-
-            // Uncomment the below line when using server-side menu in horizontal layout and comment the above line
-            // navItems: horizontalMenuItems
-          },
-          appBar: {
-            content: () => <HorizontalAppBarContent settings={settings} saveSettings={saveSettings} />
-          }
-        }
-      })}
-    >
-      {children}
-
-    </Layout>
-  )
+  // Nouveau layout (style « chatbot ») : sidebar + historique des demandes.
+  // L'ancien layout MUI (Layout / VerticalLayout) reste disponible dans src/@core/layouts.
+  return <HdLayout>{children}</HdLayout>
 }
-
-
-
-
-
 
 export default UserLayout
 

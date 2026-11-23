@@ -65,6 +65,7 @@ import 'react-perfect-scrollbar/dist/css/styles.css'
 import 'src/iconify-bundle/icons-bundle-react'
 
 // ** Global css styles
+import '../../styles/tailwind.css'
 import '../../styles/globals.css'
 import '../../styles/clockStyle.css'
 
@@ -76,6 +77,7 @@ import { translations } from 'src/translations'
 import i18next from 'i18next'
 import { I18nextProvider } from 'react-i18next'
 import { LocalizationProvider } from '@mui/x-date-pickers'
+import { registerHelpdeskI18n, useRestoreLanguage } from 'src/i18n/helpdesk'
 
 // ** Extend App Props with Emotion
 type ExtendedAppProps = AppProps & {
@@ -91,6 +93,21 @@ type GuardProps = {
 }
 
 const clientSideEmotionCache = createEmotionCache()
+
+// i18n : initialisé UNE seule fois (auparavant à chaque rendu => la langue
+// revenait toujours au français). Langue mémorisée côté navigateur.
+if (!i18next.isInitialized) {
+  i18next.init({
+    interpolation: { escapeValue: false },
+    lng: 'fr',
+    fallbackLng: 'fr',
+    resources: {
+      en: { common: common_en },
+      fr: { common: common_fr }
+    }
+  })
+}
+registerHelpdeskI18n(i18next)
 
 // ** Pace Loader
 if (themeConfig.routingLoader) {
@@ -121,20 +138,11 @@ const Guard = ({ children, authGuard, guestGuard }: GuardProps) => {
 const App = (props: ExtendedAppProps) => {
   const { Component, emotionCache = clientSideEmotionCache, pageProps,session } = props
 
-i18next.init({
-    interpolation: { escapeValue: false },  // React already does escaping
-    lng: 'fr',                              // language to use
-    resources: {
-        en: {
-            common: common_en               // 'common' is our custom namespace
-        },
-        fr: {
-            common: common_fr
-        },
-      }
-});
 
 
+
+
+  useRestoreLanguage()
 
   // Variables
   const contentHeightFixed = Component.contentHeightFixed ?? false
@@ -156,7 +164,7 @@ i18next.init({
 
       <CacheProvider value={emotionCache}>
         <Head>
-          <title>{`BoBrain-Helpdesk`}</title>
+          <title>{`BOBRAIN Helpdesk`}</title>
           <meta
             name='description'
           />

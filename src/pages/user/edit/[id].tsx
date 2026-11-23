@@ -1,154 +1,22 @@
-// ** Demo Components Imports
-import { useEffect } from 'react';
-import { getSession } from 'next-auth/react';
-import { useDispatch, useSelector } from 'react-redux';
-import { useSettings } from 'src/@core/hooks/useSettings';
-import { EntityAbility, UserAction } from 'src/configs/Action';
-import { getbranchs } from 'src/redux/reducers/Branch/BranchReducer';
-import { getroles } from 'src/redux/reducers/Role/RoleReducer';
-import { RootState } from 'src/redux/store';
-import ExpiredSessionDialog from 'src/views/pages/confirmDialog/ExpiredSessionDialog';
-import EditView from 'src/views/pages/user/edit/Edit'
-import { getdepartments } from 'src/redux/reducers/department/department-reducer';
-// ** Styled Component
+import { useEffect } from 'react'
+import { useRouter } from 'next/router'
+import { useSettings } from 'src/@core/hooks/useSettings'
+import { EntityAbility, UserAction } from 'src/configs/Action'
+import UserForm from 'src/views/pages/hd/users/UserForm'
 
-const UserEdit = (props:any) => {
-
-  const rolestore = useSelector((state: RootState) => state.role.data);
-  const branchstore = useSelector((state: RootState) => state.branch.data);
-  const departmentstore = useSelector((state: RootState) => state.department.data);
-
-
-  const {data,roleData,branchData,departmentData}=props;
-
+const Page = () => {
+  const router = useRouter()
   const { settings, saveSettings } = useSettings()
+  useEffect(() => {
+    saveSettings({ ...settings, iconPage: '', titlePage: '' })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  const id = typeof router.query.id === 'string' ? router.query.id : undefined
 
-
-  const dispatch=useDispatch()
-
-
-
-
-   useEffect(()=>{
-    saveSettings({ ...settings,
-      iconPage:``,
-      titlePage:`Modification Utilisateur`
-     })
-  },[])
-
-
-  useEffect(()=>{
-    dispatch(getroles(roleData));
-    dispatch(getbranchs(branchData));
-    dispatch(getdepartments(departmentData));
-  },[dispatch])
-
-
-
-  return (
-      data?
-        <EditView data={data} roles={rolestore} branchs={branchstore} departments={departmentstore}/>
-      :
-       <ExpiredSessionDialog/>
-  )
+  return id ? <UserForm id={id} key={id} /> : null
 }
 
-UserEdit.acl = {
-  action:UserAction.Edit,
-  subject:EntityAbility.USER
-}
+Page.acl = { action: UserAction.Edit, subject: EntityAbility.USER }
+Page.authGuard = true
 
-UserEdit.authGuard = true
-
-export async function getServerSideProps(context: {req?: any; }) {
-  const { req} = context;
-  const { id } = context.query;
-
-
- const session = await getSession({ req });
-  try{
-  const {token}=session?.user;
-
-    const useredit = await fetch(`${process.env.PUBLIC_URL}/${process.env.ENTITYUSER}/${id}`,{
-      headers: {
-        'x-user-claims': `${token}`,
-      },
-    });
-
-
-
-    const branchResp = await fetch(`${process.env.PUBLIC_URL}/${process.env.ENTITYBRANCH}`,{
-      headers: {
-        'x-user-claims': `${token}`,
-      },
-    });
-
-    const roleResp = await fetch(`${process.env.PUBLIC_URL}/${process.env.ENTITYROLE}`,{
-      headers: {
-        'x-user-claims': `${token}`,
-      },
-    });
-
-     const departmentResp = await fetch(`${process.env.PUBLIC_URL}/${process.env.ENTITYDEPARTMENT}`,{
-      headers: {
-        'x-user-claims': `${token}`,
-      },
-    });
-
-
-
-
-
-
-    const usereditResponse:any = await useredit.json();
-        console.log('bbnbnbnbn')
-
-    const roleResponse:any = await roleResp.json();
-
-    const branchResponse:any = await branchResp.json();
-
-    const departmentResponse:any = await departmentResp.json();
-
-
-
-
-  if(!roleResponse || roleResponse.errors){
-      return {redirect: {
-        destination: '/login',
-        permanent: false,
-    }
-  }}
-
-  if(!branchResponse || branchResponse.errors){
-    return {redirect: {
-      destination: '/login',
-      permanent: false,
-  }
-}}
-  if(!departmentResponse || departmentResponse.errors){
-    return {redirect: {
-      destination: '/login',
-      permanent: false,
-  }
-}}
-
-
-
-return {
-    props: {
-      data:usereditResponse,
-      roleData:roleResponse,
-      branchData:branchResponse,
-      departmentData:departmentResponse,
-    },
-  }
-} catch (e) {
-  return {
-      redirect: {
-          destination: '/login',
-          permanent: false,
-      }
-  };
-}
-}
-export default UserEdit
+export default Page

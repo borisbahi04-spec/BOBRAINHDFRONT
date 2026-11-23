@@ -23,5 +23,9 @@ export const PAGE_SETTINGS = {
   stations: {
     icon: 'mdi:factory',
     title: 'Stations',
+  },
+  labAgents: {
+    icon: 'mdi:flask-outline',
+    title: 'Agents labo',
   }
 }
