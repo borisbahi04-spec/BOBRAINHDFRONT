@@ -1,3 +1,5 @@
+import { useEffect } from 'react'
+import { useSettings } from 'src/@core/hooks/useSettings'
 // ** Next Import
 import { GetStaticProps, GetStaticPaths, GetStaticPropsContext, InferGetStaticPropsType } from 'next/types'
 import { EntityAbility, UserAction } from 'src/configs/Action'
@@ -10,17 +12,21 @@ import { EntityAbility, UserAction } from 'src/configs/Action'
 import AccountSettings from 'src/views/pages/user-profile/AccountSettings'
 
 const AccountSettingsTab = ({ tab }: InferGetStaticPropsType<typeof getStaticProps>) => {
-  return <AccountSettings tab={tab}  />
+  const { settings, saveSettings } = useSettings()
+
+  useEffect(() => {
+    saveSettings({ ...settings, iconPage: 'mdi:account-cog-outline', titlePage: 'MON COMPTE' })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  return <AccountSettings tab={tab} />
 }
 
 export const getStaticPaths: GetStaticPaths = () => {
   return {
     paths: [
       { params: { tab: 'account' } },
-      { params: { tab: 'security' } },
-      { params: { tab: 'billing' } },
-      { params: { tab: 'notifications' } },
-      { params: { tab: 'connections' } }
+      { params: { tab: 'security' } }
     ],
     fallback: false
   }

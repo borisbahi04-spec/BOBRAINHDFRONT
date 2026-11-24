@@ -350,7 +350,7 @@ const AddCard = ({ data }: AddCardProps) => {
               />
             </Field>
 
-            <Field id='operator' label={t('form.operator')} optionalLabel={t('common.optional')} error={err('operator')} help={t('form.operatorHelp')}>
+            <Field id='operator' label={t('form.operator')} optionalLabel={t('common.optional')} error={err('operator')} help={t(session?.role?.isForOperator ? 'form.operatorHelpSelf' : 'form.operatorHelp')}>
               <Controller
                 name='operator'
                 control={control}
