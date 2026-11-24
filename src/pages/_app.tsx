@@ -8,6 +8,7 @@ import type { NextPage } from 'next'
 import type { AppProps } from 'next/app'
 
 import { SessionProvider } from "next-auth/react"
+import SessionWatcher from 'src/components/hd/SessionWatcher'
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import 'dayjs/locale/fr';
 
@@ -184,6 +185,7 @@ const App = (props: ExtendedAppProps) => {
                       <TranslatorProvider translations={translations}>
                           <I18nextProvider i18n={i18next}>
                             <SessionProvider session={session}>
+                              <SessionWatcher />
                               <Guard authGuard={authGuard} guestGuard={guestGuard}>
                               <AclGuard aclAbilities={aclAbilities} guestGuard={guestGuard}>
                                   {getLayout(<Component {...pageProps}/>)}

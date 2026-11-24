@@ -60,7 +60,7 @@ const fr = {
     operator: 'Opératrice concernée',
     operatorPlaceholder: 'Rechercher une opératrice',
     operatorHelp: "Choisissez l'opératrice concernée ou laissez le champ vide.",
-    operatorHelpSelf: 'Pré-rempli avec vous-même ; vous pouvez vider le champ.',
+    operatorHelpSelf: "Pré-rempli avec vous-même ; choisissez la collègue qui a commis l'erreur ou videz le champ.",
     description: 'Description du problème',
     descriptionPlaceholder: "Que s'est-il passé ? Quelle valeur est erronée, sur quel ticket ?",
     correction: 'Correction à réaliser',
@@ -174,6 +174,14 @@ const fr = {
     language: 'Langue',
     logout: 'Déconnexion',
     branch: 'Société'
+  },
+  session: {
+    idleTitle: 'Toujours là ?',
+    idleText: "Vous êtes inactif depuis un moment. Pour votre sécurité, vous serez déconnecté dans {{seconds}} s.",
+    stay: 'Rester connecté',
+    logout: 'Se déconnecter',
+    expiredNotice: 'Votre session a expiré. Veuillez vous reconnecter.',
+    idleNotice: "Vous avez été déconnecté après une période d'inactivité."
   },
   login: {
     title: 'Connexion',

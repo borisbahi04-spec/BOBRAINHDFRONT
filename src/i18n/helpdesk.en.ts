@@ -62,7 +62,7 @@ const en: HdDict = {
     operator: 'Operator concerned',
     operatorPlaceholder: 'Search an operator',
     operatorHelp: 'Pick the operator concerned or leave the field empty.',
-    operatorHelpSelf: 'Pre-filled with yourself; you can clear the field.',
+    operatorHelpSelf: 'Pre-filled with yourself; pick the colleague who made the error or clear the field.',
     description: 'Problem description',
     descriptionPlaceholder: 'What happened? Which value is wrong, on which ticket?',
     correction: 'Correction to perform',
@@ -176,6 +176,14 @@ const en: HdDict = {
     language: 'Language',
     logout: 'Sign out',
     branch: 'Company'
+  },
+  session: {
+    idleTitle: 'Still there?',
+    idleText: 'You have been inactive for a while. For your security, you will be signed out in {{seconds}} s.',
+    stay: 'Stay signed in',
+    logout: 'Sign out',
+    expiredNotice: 'Your session has expired. Please sign in again.',
+    idleNotice: 'You were signed out after a period of inactivity.'
   },
   login: {
     title: 'Sign in',

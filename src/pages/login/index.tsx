@@ -11,6 +11,7 @@ import Icon from 'src/@core/components/icon'
 import BlankLayout from 'src/@core/layouts/BlankLayout'
 import { useHd } from 'src/i18n/helpdesk'
 import { Button, Field, LangSwitch, cn } from 'src/components/hd'
+import { safeReturnUrl } from 'src/helpers/sessionExpiry'
 
 interface FormData {
   username: string
@@ -23,6 +24,8 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const expired = router.query.expired
+  const expiredNotice = !error && (expired === 'idle' ? t('session.idleNotice') : expired ? t('session.expiredNotice') : '')
 
   const schema = useMemo(
     () =>
@@ -48,7 +51,7 @@ const LoginPage = () => {
       username: CryptoJS.AES.encrypt(username.trim(), SECRET_KEY).toString(),
       password: CryptoJS.AES.encrypt(password, SECRET_KEY).toString(),
       redirect: false,
-      callbackUrl: '/'
+      callbackUrl: safeReturnUrl(router.query.returnUrl) ?? '/'
     })
     if (!res || res.error) {
       let message = t('login.invalid')
@@ -61,7 +64,7 @@ const LoginPage = () => {
       setSubmitting(false)
       return
     }
-    router.push(res.url || '/')
+    router.push(safeReturnUrl(router.query.returnUrl) ?? '/')
   }
 
   return (
@@ -103,6 +106,13 @@ const LoginPage = () => {
             <img src='/images/bobrain-logo.png' alt='BOBRAIN' className='mb-8 h-14 w-auto lg:hidden' />
             <h1 className='m-0 text-2xl font-bold text-gray-900'>{t('login.title')}</h1>
             <p className='m-0 mt-1.5 text-sm text-gray-500'>{t('login.subtitle')}</p>
+
+            {expiredNotice && (
+              <div role='status' className='mt-6 flex items-start gap-2 rounded-lg border border-solid border-harvest-100 bg-harvest-50 px-3.5 py-3 text-sm text-harvest-700'>
+                <Icon icon='mdi:clock-alert-outline' fontSize={18} className='mt-px shrink-0' />
+                {expiredNotice}
+              </div>
+            )}
 
             {error && (
               <div role='alert' className='mt-6 flex items-start gap-2 rounded-lg border border-solid border-red-200 bg-red-50 px-3.5 py-3 text-sm text-red-700'>

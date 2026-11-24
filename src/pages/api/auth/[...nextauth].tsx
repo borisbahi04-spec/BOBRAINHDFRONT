@@ -65,6 +65,8 @@ return user; // ✅ SUCCESS
 
   session: {
     strategy: "jwt",
+    // durée max. du cookie de session (s) — alignée sur APP_JWT_SESSION_EXPIRES_IN de l'API (1 jour par défaut)
+    maxAge: Number(process.env.NEXTAUTH_SESSION_MAXAGE) || 24 * 60 * 60,
   },
 
   //secret: process.env.NEXTAUTH_SECRET,
